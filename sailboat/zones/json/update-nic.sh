@@ -45,7 +45,6 @@ fi
 
 
 if [ $TYPE == STATIC ]; then
-
     # IP
     read -p "IP Address> " IP_STATIC
     # NETMASK
