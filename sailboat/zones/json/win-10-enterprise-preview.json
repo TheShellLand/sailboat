@@ -1,0 +1,23 @@
+{
+    "alias": "win10",
+    "brand": "kvm",
+    "vcpus": 1,
+    "autoboot": false,
+    "ram": 2048,
+    "resolvers": ["8.8.8.8", "8.8.4.4"],
+    "disks": [
+	{
+	    "boot": true,
+	    "model": "virtio",
+	    "size": 40960
+	}
+    ],
+    "nics": [
+	{
+	    "nic_tag": "admin",
+	    "model": "virtio",
+	    "ip": "dhcp",
+	    "primary": 1
+	}
+    ]
+}

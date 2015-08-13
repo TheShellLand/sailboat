@@ -1,0 +1,17 @@
+{
+    "alias" : "ubuntu-14.04 image", 
+    "brand": "kvm",
+    "dataset_uuid": "0bd891a8-1e73-11e5-acf7-7704f7a4460f",
+    "resolvers": [ "8.8.8.8", "8.8.4.4" ], 
+    "ram": "512",
+    "vcpus": "1",
+    "nics": [
+	{
+	    "nic_tag": "admin",
+ 	    "model": "e1000",
+	    "ip": "dhcp",
+	    "subnet": "dhcp",
+	    "gateway": "dhcp"
+	}
+    ]
+}

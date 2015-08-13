@@ -1,0 +1,22 @@
+{
+    "alias": "win",
+    "brand": "kvm",
+    "vcpus": 1,
+    "autoboot": false,
+    "ram": 4096,
+    "disks": [
+	{
+	    "boot": true,
+	    "model": "virtio",
+	    "size": 40960
+	}
+    ],
+    "nics": [
+	{
+	    "nic_tag": "admin",
+	    "model": "virtio",
+	    "ip": "dhcp",
+	    "primary": 1
+	}
+    ]
+}

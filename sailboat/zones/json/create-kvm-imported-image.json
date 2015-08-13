@@ -1,0 +1,24 @@
+{
+    "brand": "kvm",
+    "resolvers": [
+	"8.8.8.8",
+	"8.8.4.4"
+    ],
+    "ram": "512",
+    "vcpus": "1",
+    "nics": [
+	{
+	    "nic_tag": "admin",
+	    "model": "virtio",
+	    "ip": "dhcp",
+	    "primary": true
+	}
+    ],
+    "disks": [
+	{
+	    "image_uuid": "3162a91e-8b5d-11e2-a78f-9780813f9142",
+	    "boot": true,
+	    "model": "virtio"
+	}
+    ]
+}

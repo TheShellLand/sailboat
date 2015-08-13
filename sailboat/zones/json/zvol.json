@@ -1,0 +1,25 @@
+{
+  "brand": "kvm",
+  "vcpus": 1,
+  "autoboot": false,
+  "ram": 1024,
+  "hostname": "",
+  "resolvers" : [ "8.8.8.8", "8.8.4.4" ], 
+  "disks": [
+    {
+      "boot": true,
+      "model": "virtio",
+      "image_uuid": "",
+      "size": 40960
+    }
+  ],
+  "nics": [
+    {
+      "nic_tag": "admin",
+      "model": "virtio",
+      "ip": "dhcp",
+      "netmask": "dhcp",
+      "gateway": "dhcp"
+    }
+  ]
+}

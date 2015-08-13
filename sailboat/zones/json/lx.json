@@ -1,0 +1,15 @@
+{
+  "brand": "lx",
+  "kernel_version": "3.13.0",
+  "max_physical_memory": 2048,
+  "image_uuid": "",
+  "resolvers": ["8.8.8.8","8.8.4.4"],
+  "nics": [
+    {
+      "nic_tag": "admin",
+      "ip": "dhcp",
+      "netmask": "dhcp",
+      "gateway": "dhcp",
+    }
+  ]
+}

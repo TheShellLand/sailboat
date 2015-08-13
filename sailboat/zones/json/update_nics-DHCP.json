@@ -1,0 +1,10 @@
+{
+"update_nics": [
+{
+"nic_tag": "admin",
+"model": "virtio",
+"ip": "dhcp",
+"primary": true
+}
+]
+}

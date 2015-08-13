@@ -1,0 +1,17 @@
+{
+  "brand": "joyent",
+  "image_uuid": "38db1c10-2345-448c-875f-f38f36c111b2",
+  "alias": "test",
+  "hostname": "test",
+  "max_physical_memory": 1024,
+  "quota": 20,
+  "resolvers" : [ "8.8.8.8", "8.8.4.4" ], 
+  "nics": [
+    {
+      "nic_tag": "admin",
+      "ip": "dhcp",
+      "netmask": "dhcp",
+      "gateway": "dhcp"
+    }
+  ]
+}
