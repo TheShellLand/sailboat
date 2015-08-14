@@ -42,10 +42,3 @@ Network Trash Folder
 Temporary Items
 .apdisk
 *.sh~
-sailboat/zones/json/skynet/skynet-www.json
-sailboat/zones/json/skynet/skynet-elk-noNICtag.json
-sailboat/zones/json/skynet/skynet-dns.json
-sailboat/zones/json/skynet/skynet-proxy.json
-sailboat/zones/json/skynet/skynet-ssh.json
-sailboat/zones/json/skynet/skynet-dhcp.json
-sailboat/zones/json/skynet/skynet-dht.json
