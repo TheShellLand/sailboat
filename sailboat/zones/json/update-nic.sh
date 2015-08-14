@@ -2,8 +2,13 @@
 # Update zone nic
 
 
-function smartos_update_nic($TYPE){
+function smartos_update_nic(){
+
+    TYPE=$1
+
     # UUID
+    echo "[*] List of VMs"
+    vmadm list -o uuid,type,ram,state,nics.0.ip,alias
     read -p "Enter UUID> " UUID
 
     # INTERFACE
@@ -28,23 +33,24 @@ function smartos_update_nic($TYPE){
 
 if [ $TYPE == DHCP ]; then
     # DHCP
-    print '
+    print "
         {
-          "update_nics": [
+          \"update_nics\": [
             {
-              "interface": "$INTERFACE",
-              "mac": "$MAC",
-              "nic_tag": "$NIC_TAG",
-              "model": "virtio",
-              "ip": "dhcp",
-              "primary": true
+              \"interface\": \"$INTERFACE\",
+              \"mac\": \"$MAC\",
+              \"nic_tag\": \"$NIC_TAG\",
+              \"model\": \"virtio\",
+              \"ip\": \"dhcp\",
+              \"primary\": true
             }
           ]
-        }' | vmadm update $UUID
+        }" | vmadm update $UUID
 fi
 
 
 if [ $TYPE == STATIC ]; then
+
     # IP
     read -p "IP Address> " IP_STATIC
     # NETMASK
@@ -53,20 +59,22 @@ if [ $TYPE == STATIC ]; then
     read -p "Gateway> " GATEWAY
 
     # Static IP
-    print '
+    print "
         {
-          "update_nics": [
+          \"update_nics\": [
             {
-              "interface": "$INTERFACE",
-              "nic_tag": "$NIC_TAG",
-              "ip": "$IP_STATIC",
-              "netmask": "$NETMASK",
-              "gateway": "$GATEWAY",
-              "primary": true
+              \"interface\": \"$INTERFACE\",
+              \"nic_tag\": \"$NIC_TAG\",
+              \"ip\": \"$IP_STATIC\",
+              \"netmask\": \"$NETMASK\",
+              \"gateway\": \"$GATEWAY\",
+              \"primary\": true
             }
           ]
-        }' | vmadm update $UUID
+        }" | vmadm update $UUID
 fi
+
+exit 0
 
 }
 
@@ -76,7 +84,7 @@ fi
 
 select TYPE in "DHCP" "STATIC"; do
     case $TYPE in
-        DHCP) smartos_update_nic(DHCP);;
-        STATIC) smartos_update_nic(STATIC);;
+        DHCP) smartos_update_nic DHCP ;;
+        STATIC) smartos_update_nic STATIC ;;
     esac
 done
