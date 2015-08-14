@@ -21,9 +21,15 @@ function smartos_update_nic(){
     echo "[*] Current nics"
     vmadm get $UUID 2>/dev/null | json nics
     vmadm info $UUID 2>/dev/null | json nics
+    MAC=
+    MAC1=
+    MAC=$(vmadm get $UUID 2>/dev/null | json nics | json -a mac)
+    MAC1=$(vmadm info $UUID 2>/dev/null | json nics | json -a mac)
     echo ""
-    read -p "Enter mac> " MAC
-
+    if [ ! -z "$MAC" ]; then MAC=$MAC; fi
+    if [ ! -z "$MAC1" ]; then MAC=$MAC1; fi
+    read -p "Enter mac> ($MAC) " NEWMAC
+    if [ ! -z "$NEWMAC" ]; then MAC=$NEWMAC; fi
     # NIC_TAG
     echo "[*] Existing nic tags"
     nictagadm list
@@ -73,6 +79,10 @@ if [ $TYPE == STATIC ]; then
           ]
         }" | vmadm update $UUID
 fi
+
+echo "[*] New nic"
+vmadm get $UUID 2>/dev/null | json nics
+vmadm info $UUID 2>/dev/null | json nics
 
 exit 0
 

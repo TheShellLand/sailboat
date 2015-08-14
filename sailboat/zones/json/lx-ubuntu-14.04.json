@@ -1,15 +1,18 @@
 {
-    "alias": "lx",
-    "brand": "lx",
-    "kernel_version": "3.13.0",
-    "max_physical_memory": 2048,
-    "image_uuid": "a21a64a0-0809-11e5-a64f-ff80e8e8086f",
-    "resolvers": ["8.8.8.8", "8.8.4.4"],
-    "nics": [
-	{
-	    "nic_tag": "admin",
-	    "model": "virtio",
-	    "ip": "dhcp",
-	}
-    ]
+  "alias": "lx",
+  "brand": "lx",
+  "kernel_version": "3.13.0",
+  "max_physical_memory": 2048,
+  "image_uuid": "a21a64a0-0809-11e5-a64f-ff80e8e8086f",
+  "resolvers": [
+    "8.8.8.8",
+    "8.8.4.4"
+  ],
+  "nics": [
+    {
+      "nic_tag": "admin",
+      "model": "virtio",
+      "ip": "dhcp"
+    }
+  ]
 }

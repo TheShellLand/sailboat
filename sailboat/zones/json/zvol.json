@@ -4,7 +4,7 @@
   "autoboot": false,
   "ram": 1024,
   "hostname": "",
-  "resolvers" : [ "8.8.8.8", "8.8.4.4" ], 
+  "resolvers" : ["8.8.8.8", "8.8.4.4"], 
   "disks": [
     {
       "boot": true,

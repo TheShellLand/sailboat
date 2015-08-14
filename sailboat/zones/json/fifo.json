@@ -1,22 +1,19 @@
 {
- "autoboot": true,
- "brand": "joyent",
- "image_uuid": "62f148f8-6e84-11e4-82c5-efca60348b9f",
- "max_physical_memory": 3072,
- "cpu_cap": 100,
- "alias": "fifo",
- "quota": "40",
- "resolvers": [
-  "8.8.8.8",
-  "8.8.4.4"
- ],
- "nics": [
-  {
-   "interface": "net0",
-   "nic_tag": "admin",
-   "ip": "10.0.1.6",
-   "gateway": "10.0.1.1",
-   "netmask": "255.255.255.0"
-  }
- ]
+  "autoboot": true,
+  "alias": "fifo",
+  "brand": "joyent",
+  "image_uuid": "62f148f8-6e84-11e4-82c5-efca60348b9f",
+  "max_physical_memory": 3072,
+  "cpu_cap": 100,
+  "quota": "40",
+  "resolvers": ["8.8.8.8","8.8.4.4"],
+  "nics": [
+    {
+      "interface": "fifo0",
+      "nic_tag": "net0",
+      "ip": "10.0.1.6",
+      "gateway": "10.0.1.1",
+      "netmask": "255.255.255.0"
+    }
+  ]
 }

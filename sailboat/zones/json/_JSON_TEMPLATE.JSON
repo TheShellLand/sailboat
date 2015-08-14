@@ -1,16 +1,26 @@
 {
-  "alias": "kvm imported images",
-  "brand": "kvm",
+  "autoboot": false,
+  "alias": "",
+  "brand": "lx|kvm|joyent",
   "ram": "512",
   "vcpus": "1",
   "resolvers": ["8.8.8.8","8.8.4.4"],
   "nics": [
     {
-      "interface": "net0",
-      "nic_tag": "admin",
+      "interface": "newnet0",
+      "nic_tag": "net0",
       "model": "virtio",
       "ip": "dhcp",
       "primary": true
+    }
+  ],
+  "nics": [
+    {
+      "interface": "newnet1",
+      "nic_tag": "net1",
+      "ip": "10.0.1.6",
+      "gateway": "10.0.1.1",
+      "netmask": "255.255.255.0"
     }
   ],
   "disks": [

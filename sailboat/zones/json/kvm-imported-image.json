@@ -1,24 +1,24 @@
 {
-    "brand": "kvm",
-    "resolvers": [
-	"8.8.8.8",
-	"8.8.4.4"
-    ],
-    "ram": "512",
-    "vcpus": "1",
-    "nics": [
-	{
-	    "nic_tag": "admin",
-	    "model": "virtio",
-	    "ip": "dhcp",
-	    "primary": true
-	}
-    ],
-    "disks": [
-	{
-	    "image_uuid": "a21a64a0-0809-11e5-a64f-ff80e8e8086f",
-	    "boot": true,
-	    "model": "virtio"
-	}
-    ]
+  "brand": "kvm",
+  "resolvers": [
+    "8.8.8.8",
+    "8.8.4.4"
+  ],
+  "ram": "512",
+  "vcpus": "1",
+  "nics": [
+    {
+      "nic_tag": "admin",
+      "model": "virtio",
+      "ip": "dhcp",
+      "primary": true
+    }
+  ],
+  "disks": [
+    {
+      "image_uuid": "a21a64a0-0809-11e5-a64f-ff80e8e8086f",
+      "boot": true,
+      "model": "virtio"
+    }
+  ]
 }
