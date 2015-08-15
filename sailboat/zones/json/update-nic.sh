@@ -1,5 +1,5 @@
 #!/bin/bash
-# Update zone nic
+# SmartOS script for updating zone nic
 
 
 function smartos_update_nic(){
