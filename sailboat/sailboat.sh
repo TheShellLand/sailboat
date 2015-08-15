@@ -79,7 +79,7 @@ function _go() {
 
 
     if [ -d $sailboat/opt ];							        # copy services
-    then rsync -r $sailboat/opt/ /opt/;
+    then rsync -r --delete $sailboat/opt/ /opt/;
 	chmod o+x /opt/custom/share/svc/*
 	echo "[*] $sailboat/opt copied";
 
