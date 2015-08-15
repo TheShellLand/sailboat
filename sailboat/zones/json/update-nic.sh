@@ -14,8 +14,15 @@ function smartos_update_nic(){
     # INTERFACE
     echo "[*] Existing interfaces"
     dladm show-vnic
+    INTERFACE=
+    INTERFACE1=
+    INTERFACE=$(vmadm get $UUID 2>/dev/null | json nics | json -a interface)
+    INTERFACE1=$(vmadm get $UUID 2>/dev/null | json nics | json -a interface)
+    if [ ! -z "$INTERFACE" ]; then INTERFACE=$INTERFACE; fi
+    if [ ! -z "$INTERFACE1" ]; then INTERFACE=$INTERFACE1; fi
     echo ""
-    read -p "Enter existing (or new?) interface> " INTERFACE
+    read -p "Enter existing (or new) interface> ($INTERFACE) " NEWINTERFACE
+    if [ ! -z "$NEWINTERFACE" ]; then INTERFACE=$NEWINTERFACE; fi
 
     # MAC
     echo "[*] Current nics"
@@ -30,11 +37,19 @@ function smartos_update_nic(){
     if [ ! -z "$MAC1" ]; then MAC=$MAC1; fi
     read -p "Enter mac> ($MAC) " NEWMAC
     if [ ! -z "$NEWMAC" ]; then MAC=$NEWMAC; fi
+
     # NIC_TAG
     echo "[*] Existing nic tags"
     nictagadm list
+    NIC_TAG=
+    NIC_TAG1=
+    NIC_TAG=$(vmadm get $UUID 2>/dev/null | json nics | json -a nic_tag)
+    NIC_TAG1=$(vmadm info $UUID 2>/dev/null | json nics | json -a nic_tag)
     echo ""
-    read -p "Enter nic tag> " NIC_TAG
+    if [ ! -z "$NIC_TAG" ]; then NIC_TAG=$NIC_TAG; fi
+    if [ ! -z "$NIC_TAG1" ]; then NIC_TAG=$NIC_TAG1; fi 
+    read -p "Enter nic tag> ($NIC_TAG) " NEWNIC_TAG
+    if [ ! -z "$NEWNIC_TAG" ]; then NIC_TAG=$NEWNIC_TAG; fi
 
 
 if [ $TYPE == DHCP ]; then
