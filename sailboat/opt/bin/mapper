@@ -1,0 +1,53 @@
+#!/bin/bash
+# SmartOS Networking Mapper
+#
+# Maps out all physical devs, links, nic tags, etherstubs and vnics
+# Currently, no bridge devices supported
+#
+#
+# alpha0.1
+# 0xB4AE7C4C
+#
+
+function _mapper(){
+    return 0
+}
+
+function dladm_show_phys(){
+    dladm show-phys | sed '1d' | awk '{print "{\"" $1 "\":[{\"phys\":\"" $1 "\",\"media\":\""  $2 "\",\"state\":\"" $3 "\",\"speed\":\"" $4 "\",\"duplex\":\"" $5 "\",\"device\":\"" $6 "\"}]}"}' | json -g
+}
+
+function dladm_show_link(){
+    dladm show-link | sed '1d' | awk '{print "{\"" $1 "\":[{\"class\":\""  $2 "\",\"mtu\":\"" $3 "\",\"state\":\"" $4 "\",\"bridge\":\"" $5 "\",\"over\":\"" $6 "\"}]}"}' | json -g
+}
+
+function dladm_show_etherstub(){
+    dladm show-etherstub | sed '1d' | awk '{print "{\"" $1 "\":[{\"etherstub\":\"" $1 "\"}]}"}' | json -g
+}
+
+function dladm_show_vnic(){
+    dladm show-vnic | sed '1d' | awk '{print "{\"" $1 "\":[{\"vnic\":\"" $1 "\",\"over\":\""  $2 "\",\"speed\":\"" $3 "\",\"macaddress\":\"" $4 "\",\"macaddrtype\":\"" $5 "\",\"vid\":\"" $6 "\",\"zone\":\"" $7 "\"}]}"}' | json -g
+}
+
+function nictagadm_list(){
+    nictagadm list | sed '1d' | awk '{print "{\"" $1 "\":[{\"nictag\":\"" $1 "\",\"macaddress\":\""  $2 "\",\"link\":\"" $3 "\",\"type\":\"" $4 "\"}]}"}' | json -g
+}
+
+
+
+function debug(){
+    select opt in dladm_show_phys dladm_show_link dladm_show_etherstub dladm_show_vnic nictagadm_list; do
+        csae $opt in
+            dladm_show_phys)dladm_show_phys;;
+            dladm_show_link)dladm_show_link;;
+            dladm_show_etherstub)dladm_show_etherstub;;
+            dladm_show_vnic)dladm_show_vnic;;
+            nictagadm_list)nictagadm_list;;
+        esac
+    done
+}
+
+# Main
+
+
+if [ "$1" == "-debug" ]; then debug; fi
