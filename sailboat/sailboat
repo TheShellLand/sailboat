@@ -72,7 +72,7 @@ function _go() {
 
     if [ -d $sailboat/zones ];							        # copy zones
     then rsync -r $sailboat/zones/ /zones/;
-        chmod -R +x /opt/bin/
+        chmod +x /opt/bin/*
 	echo "[*] $sailboat/zones copied";
 
     else echo "[ERROR]"; exit 1; fi;
