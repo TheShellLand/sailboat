@@ -1,12 +1,11 @@
 #!/bin/bash
+# SmartOS script for creating necessary zones
 #
 # Launch the sailboat!
 #
 #
-# Version="1.0.0";
-# Revision="0a";
-# Script="sailboat";
-#
+# alpha0.1.1
+# 0xB4AE7C4C
 
 
 rootZone="zones"
@@ -71,7 +70,7 @@ function _go() {
 	    echo "[*] ${requiredZones[$index]} created"; fi; done;
 
     if [ -d $sailboat/zones ];							# copy zones, including json
-    then rsync -r --delete $sailboat/zones/ /zones/;
+    then rsync -r $sailboat/zones/ /zones/;
 	echo "[*] $sailboat/zones copied";
 
     else echo "[ERROR]"; exit 1; fi;

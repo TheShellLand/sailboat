@@ -1,0 +1,13 @@
+#!/bin/sh
+# SmartOS script creating VMs
+#
+# Provides an easy to use script for creating LX, Joyent, and KVM zones
+# This de-encumbers the use of manual typing and creates the json vm spec automatically
+# Also, I stopped wanting to refer to an endless number of json files for figuring out what options to use for which
+#  type of VM I was creating
+#
+#
+# alpha0.1
+# 0xB4AE7C4C
+#
+

@@ -143,6 +143,7 @@ function smartos_update_nic(){
         _STATICconfig
     fi
 
+    # UPDATE VM
     echo "[*] New nic"
     vmadm get $UUID 2>/dev/null | json nics
     vmadm info $UUID 2>/dev/null | json nics
