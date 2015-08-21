@@ -1,17 +1,26 @@
 #!/bin/bash
 # SmartOS script for updating zone nic
+#
+# Program for setting DHCP and Static addresses
+#
+#
+# alpha0.1
+# 0xB4AE7C4C
+#
 
+function _setUUID(){
 
-function smartos_update_nic(){
-
-    TYPE=$1
-
-    # UUID
+    # SET UUID
     echo "[*] List of VMs"
     vmadm list -o uuid,type,ram,state,nics.0.ip,alias
     read -p "Enter UUID> " UUID
+    export UUID
 
-    # INTERFACE
+}
+
+function _setINTERFACE(){
+
+    # SET INTERFACE
     echo "[*] Existing interfaces"
     dladm show-vnic
     INTERFACE=
@@ -22,9 +31,13 @@ function smartos_update_nic(){
     if [ ! -z "$INTERFACE1" ]; then INTERFACE=$INTERFACE1; fi
     echo ""
     read -p "Enter existing (or new) interface> ($INTERFACE) " NEWINTERFACE
-    if [ ! -z "$NEWINTERFACE" ]; then INTERFACE=$NEWINTERFACE; fi
+    if [ ! -z "$NEWINTERFACE" ]; then export INTERFACE=$NEWINTERFACE; fi
 
-    # MAC
+}
+
+function _setMAC(){
+
+    # SET MAC
     echo "[*] Current nics"
     vmadm get $UUID 2>/dev/null | json nics
     vmadm info $UUID 2>/dev/null | json nics
@@ -36,9 +49,13 @@ function smartos_update_nic(){
     if [ ! -z "$MAC" ]; then MAC=$MAC; fi
     if [ ! -z "$MAC1" ]; then MAC=$MAC1; fi
     read -p "Enter mac> ($MAC) " NEWMAC
-    if [ ! -z "$NEWMAC" ]; then MAC=$NEWMAC; fi
+    if [ ! -z "$NEWMAC" ]; then export MAC=$NEWMAC; fi
 
-    # NIC_TAG
+}
+
+function _setNICTAG(){
+
+    # SET NIC TAG
     echo "[*] Existing nic tags"
     nictagadm list
     NIC_TAG=
@@ -47,30 +64,33 @@ function smartos_update_nic(){
     NIC_TAG1=$(vmadm info $UUID 2>/dev/null | json nics | json -a nic_tag)
     echo ""
     if [ ! -z "$NIC_TAG" ]; then NIC_TAG=$NIC_TAG; fi
-    if [ ! -z "$NIC_TAG1" ]; then NIC_TAG=$NIC_TAG1; fi 
+    if [ ! -z "$NIC_TAG1" ]; then NIC_TAG=$NIC_TAG1; fi
     read -p "Enter nic tag> ($NIC_TAG) " NEWNIC_TAG
-    if [ ! -z "$NEWNIC_TAG" ]; then NIC_TAG=$NEWNIC_TAG; fi
+    if [ ! -z "$NEWNIC_TAG" ]; then export NIC_TAG=$NEWNIC_TAG; fi
 
+}
 
-if [ $TYPE == DHCP ]; then
+function _DHCPconfig(){
+
     # DHCP
-    print "
-        {
-          \"update_nics\": [
-            {
-              \"interface\": \"$INTERFACE\",
-              \"mac\": \"$MAC\",
-              \"nic_tag\": \"$NIC_TAG\",
-              \"model\": \"virtio\",
-              \"ip\": \"dhcp\",
-              \"primary\": true
-            }
-          ]
-        }" | vmadm update $UUID
-fi
+print "
+{
+  \"update_nics\": [
+    {
+      \"interface\": \"$INTERFACE\",
+      \"mac\": \"$MAC\",
+      \"nic_tag\": \"$NIC_TAG\",
+      \"model\": \"virtio\",
+      \"ip\": \"dhcp\",
+      \"primary\": true
+    }
+  ]
+}" | vmadm update $UUID
+
+}
 
 
-if [ $TYPE == STATIC ]; then
+function _STATICconfig(){
 
     # IP
     read -p "IP Address> " IP_STATIC
@@ -80,24 +100,52 @@ if [ $TYPE == STATIC ]; then
     read -p "Gateway> " GATEWAY
 
     # Static IP
-    print "
-        {
-          \"update_nics\": [
-            {
-              \"interface\": \"$INTERFACE\",
-              \"nic_tag\": \"$NIC_TAG\",
-              \"ip\": \"$IP_STATIC\",
-              \"netmask\": \"$NETMASK\",
-              \"gateway\": \"$GATEWAY\",
-              \"primary\": true
-            }
-          ]
-        }" | vmadm update $UUID
-fi
+print "
+{
+  \"update_nics\": [
+    {
+      \"interface\": \"$INTERFACE\",
+      \"nic_tag\": \"$NIC_TAG\",
+      \"ip\": \"$IP_STATIC\",
+      \"netmask\": \"$NETMASK\",
+      \"gateway\": \"$GATEWAY\",
+      \"primary\": true
+    }
+  ]
+}" | vmadm update $UUID
 
-echo "[*] New nic"
-vmadm get $UUID 2>/dev/null | json nics
-vmadm info $UUID 2>/dev/null | json nics
+}
+
+
+function smartos_update_nic(){
+
+    export TYPE=$1
+
+    # UUID
+    _setUUID
+
+    # INTERFACE
+    _setINTERFACE
+
+    # MAC
+    _setMAC
+
+    # NIC_TAG
+    _setNICTAG
+
+    # DHCP
+    if [ $TYPE == DHCP ]; then
+        _DHCPconfig
+    fi
+
+    # STATIC
+    if [ $TYPE == STATIC ]; then
+        _STATICconfig
+    fi
+
+    echo "[*] New nic"
+    vmadm get $UUID 2>/dev/null | json nics
+    vmadm info $UUID 2>/dev/null | json nics
 
 exit 0
 
