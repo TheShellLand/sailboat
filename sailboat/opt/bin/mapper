@@ -56,4 +56,4 @@ function debug(){
 # Main
 
 
-if [ "$1" == "-debug" ]; then debug; fi
+if [ "$1" == "--debug" ]; then debug; fi
