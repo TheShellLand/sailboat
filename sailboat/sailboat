@@ -70,8 +70,8 @@ function _go() {
 	then zfs create $rootZone/${requiredZones[$index]};
 	    echo "[*] ${requiredZones[$index]} created"; fi; done;
 
-    if [ -d $sailboat/zones ];							# copy zones
-    then rsync -r $sailboat/zones/ /zones/;
+    if [ -d $sailboat/zones ];							# copy zones, including json
+    then rsync -r --delete $sailboat/zones/ /zones/;
 	echo "[*] $sailboat/zones copied";
 
     else echo "[ERROR]"; exit 1; fi;

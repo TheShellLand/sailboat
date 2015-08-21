@@ -38,7 +38,6 @@ function nictagadm_list(){
 }
 
 
-
 function debug(){
     select opt in "Show physical devices" "Show links" "Show etherstubs" "Show vnics" "Show bridges" "Show nictags" quit; do
         case $opt in
@@ -53,7 +52,9 @@ function debug(){
     done
 }
 
-# Main
 
+
+
+# Main
 
 if [ "$1" == "--debug" ]; then debug; fi

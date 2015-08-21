@@ -72,7 +72,7 @@ function _setNICTAG(){
 
 function _DHCPconfig(){
 
-    # DHCP
+# DHCP
 print "
 {
   \"update_nics\": [
@@ -99,7 +99,7 @@ function _STATICconfig(){
     # GATEWAY
     read -p "Gateway> " GATEWAY
 
-    # Static IP
+# Static IP
 print "
 {
   \"update_nics\": [
