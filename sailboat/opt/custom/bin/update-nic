@@ -4,7 +4,7 @@
 # Program for setting DHCP and Static addresses
 #
 #
-# alpha0.1
+# alpha0.2
 # 0xB4AE7C4C
 #
 
@@ -73,19 +73,20 @@ function _setNICTAG(){
 function _DHCPconfig(){
 
 # DHCP
-print "
+vmadm update $UUID << EOF
 {
-  \"update_nics\": [
+  "update_nics": [
     {
-      \"interface\": \"$INTERFACE\",
-      \"mac\": \"$MAC\",
-      \"nic_tag\": \"$NIC_TAG\",
-      \"model\": \"virtio\",
-      \"ip\": \"dhcp\",
-      \"primary\": true
+      "interface": "$INTERFACE",
+      "mac": "$MAC",
+      "nic_tag": "$NIC_TAG",
+      "model": "virtio",
+      "ip": "dhcp",
+      "primary": true
     }
   ]
-}" | vmadm update $UUID
+}
+EOF
 
 }
 
@@ -100,19 +101,20 @@ function _STATICconfig(){
     read -p "Gateway> " GATEWAY
 
 # Static IP
-print "
+vmadm update $UUID << EOF
 {
-  \"update_nics\": [
+  "update_nics": [
     {
-      \"interface\": \"$INTERFACE\",
-      \"nic_tag\": \"$NIC_TAG\",
-      \"ip\": \"$IP_STATIC\",
-      \"netmask\": \"$NETMASK\",
-      \"gateway\": \"$GATEWAY\",
-      \"primary\": true
+      "interface": "$INTERFACE",
+      "nic_tag": "$NIC_TAG",
+      "ip": "$IP_STATIC",
+      "netmask": "$NETMASK",
+      "gateway": "$GATEWAY",
+      "primary": true
     }
   ]
-}" | vmadm update $UUID
+}
+EOF
 
 }
 
