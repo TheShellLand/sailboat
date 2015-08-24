@@ -12,15 +12,39 @@
 #
 
 
-function _EasyTiger(){ export DIFFICULTY=$1 }
+function _EasyTiger(){
 
-function
+  export DIFFICULTY=$1
 
+  choose_vm_type
+
+}
+
+function choose_vm_type(){
+
+  # LX, OS, or KVM
+  echo "Select a VM type"
+  select type in "SmartOS - Native, allows RAM over provisioning" "LX - Native, runs linux flavors, yum" "KVM - Windows, Mac OS X, any ISO"; do
+    case option in
+      "SmartOS - Native, allows RAM over provisioning") create_vm_spec_smartos ;;
+      "LX - Native, runs linux flavors, yum") create_vm_spec_lx ;;
+      "KVM - Windows, Mac OS X, any ISO") create_vm_spec_kvm ;;
+    esac
+  done
+
+}
+
+function create_vm_spec_smartos(){
+
+  # Create Joyent zone VM
+
+
+}
 
 function create_vm_spec_lx(){
 
-# Create LX VM
-print "
+  # Create LX VM
+  vmadm create << EOF
 {
   "brand": "lx",
   "kernel_version": "3.13.0",
@@ -35,16 +59,13 @@ print "
       "gateway": "dhcp",
     }
   ]
-}" | vmadm create
+}
+EOF
 
 
 }
 
-function create_vm_spec_os(){
 
-# Create Joyent zone VM
-
-}
 
 function create_vm_spec_kvm(){
 
