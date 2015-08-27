@@ -1,0 +1,18 @@
+{
+  "brand": "joyent",
+  "zfs_io_priority": 30,
+  "quota": 20,
+  "nowait": true,
+  "image_uuid": "47e6af92-daf0-11e0-ac11-473ca1173ab0",
+  "max_physical_memory": 256,
+  "alias": "zone70",
+  "nics": [
+    {
+      "nic_tag": "external",
+      "ip": "10.2.121.70",
+      "netmask": "255.255.0.0",
+      "gateway": "10.2.121.1",
+      "primary": 1
+    }
+  ]
+}
