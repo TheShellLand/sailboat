@@ -1,0 +1,10 @@
+{
+  "add_disks": [
+    {
+      "boot": false,
+      "model": "virtio",
+      "block_size": 8192,
+      "size": 40960
+    }
+  ]
+}
