@@ -70,7 +70,7 @@ function _go() {
 	    echo "[*] ${requiredZones[$index]} created"; fi; done;
 
     if [ -d $sailboat/zones ];							# copy zones, including json
-    then rsync -r $sailboat/zones/ /zones/;
+    then rsync -r --delete $sailboat/zones/json/ /zones/json/;
 	echo "[*] $sailboat/zones copied";
 
     else echo "[ERROR]"; exit 1; fi;
