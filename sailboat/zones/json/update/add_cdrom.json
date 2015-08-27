@@ -1,0 +1,10 @@
+{
+  "add_disks": [
+    {
+      "boot": false,
+      "model": "ide",
+      "media": "cdrom",
+      "path": "/en_sql_server_2012_standard_edition_with_sp1_x64_dvd_1228198.iso"
+    }
+  ]
+}
