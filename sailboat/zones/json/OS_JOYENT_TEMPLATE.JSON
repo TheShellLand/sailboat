@@ -1,0 +1,59 @@
+{
+  "brand": "joyent",
+  "zfs_io_priority": 100,
+  "alias": "$ALIAS",
+  "image_uuid": "47e6af92-daf0-11e0-ac11-473ca1173ab0",
+  "autoboot": $AUTOBOOT,
+  "max_physical_memory": $MAX_PHYSICAL_MEMORY,
+  "vcpus": "",
+  "resolvers": [
+    "$DNS_PRIMARY",
+    "$DNS_SECONDARY"
+  ],
+  "nics": [
+    {
+      "interface": "newnet0",
+      "nic_tag": "net0",
+      "model": "virtio",
+      "ip": "dhcp",
+      "primary": true
+    }
+  ],
+  "nics": [
+    {
+      "interface": "newnet1",
+      "nic_tag": "net1",
+      "ip": "10.0.1.6",
+      "gateway": "10.0.1.1",
+      "netmask": "255.255.255.0"
+    }
+  ],
+  "disks": [
+    {
+      "image_uuid": "3162a91e-8b5d-11e2-a78f-9780813f9142",
+      "model": "virtio | ide | scsi",
+      "compression": "on,off,lzjb,gzip,gzip-N,zle",
+      "boot": true
+    }
+  ]
+}
+
+
+{
+  "brand": "joyent",
+  "zfs_io_priority": 30,
+  "quota": 20,
+  "nowait": true,
+  "image_uuid": "47e6af92-daf0-11e0-ac11-473ca1173ab0",
+  "max_physical_memory": 256,
+  "alias": "zone70",
+  "nics": [
+    {
+      "nic_tag": "external",
+      "ip": "10.2.121.70",
+      "netmask": "255.255.0.0",
+      "gateway": "10.2.121.1",
+      "primary": 1
+    }
+  ]
+}
