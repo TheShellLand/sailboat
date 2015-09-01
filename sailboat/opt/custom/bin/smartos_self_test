@@ -1,0 +1,89 @@
+#!/bin/bash
+# SmartOS script for checking basic functionalities
+#
+#
+#
+# alpha0.1.1
+# 0xB4AE7C4C
+
+
+rootZone="zones"
+requiredZones=("iso")
+requiredLocal="/opt/custom"
+
+
+
+function _precheck() {
+
+    cd $(dirname $0)
+
+    # Check if local dir does not exist
+    if [ ! -d $requiredLocal ];
+		then
+		rsync -r ../../../../sailboat/opt/custom/ $requiredLocal/ && rm -r sailboat
+		echo "[*] sailboat/opt copied to /opt"
+		exit 0
+    fi
+
+    # Check if curr dir is sailboat
+    if [ "$(pwd)" == $requiredLocal/bin ];
+		then
+		return 0
+    fi
+
+    # Check if sailboats are the same
+    if [ -d $requiredLocal/bin ];
+    then
+		if [ ! "$(pwd)" == $requiredLocal/bin ];
+		then
+			answer=
+			read -p "$requiredLocal exists! replace? [y/N/overwrite]: " answer
+			case $answer in
+			y|Y) rsync -r --delete ../../../../sailboat/opt/custom/ $requiredLocal/ && rm -r sailboat
+				echo "[*] Replaced $requiredLocal"
+				exit 1
+				;;
+
+			overwrite|OVERWRITE) rsync -r ../../../../sailboat/opt/custom/ $requiredLocal/ && rm -r sailboat
+				echo "[*] Overwrote $requiredLocal"
+				exit 0
+				;;
+
+			n|N|*)
+				echo "[*] exiting"
+				exit 1
+				;;
+			esac;
+			exit 1
+		fi
+    fi
+
+}
+
+
+function _go() {
+
+    for (( index=0 ; index < ${#requiredZones[@]} ; index++ ));			# check for zfs dataset
+    do if [ `zfs list $rootZone/${requiredZones[$index]} 2>/dev/null >/dev/null; echo $?` == 1 ];			# create dataset if not exist
+	then zfs create $rootZone/${requiredZones[$index]};
+	    echo "[*] ${requiredZones[$index]} created"; fi; done;
+
+    else echo "[ERROR]"; exit 1; fi;
+
+}
+
+
+
+_precheck
+
+case $1 in
+    go) _go
+	;;
+
+    *)
+	echo "usage $0 go";
+	echo ""
+	echo "go	run script";
+	echo ""
+	;;
+esac;
