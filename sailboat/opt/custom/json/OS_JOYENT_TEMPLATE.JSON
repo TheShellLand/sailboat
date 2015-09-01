@@ -5,7 +5,8 @@
   "image_uuid": "47e6af92-daf0-11e0-ac11-473ca1173ab0",
   "autoboot": $AUTOBOOT,
   "max_physical_memory": $MAX_PHYSICAL_MEMORY,
-  "vcpus": "",
+  "cpu_cap": 100,
+  "quota": "40",
   "resolvers": [
     "$DNS_PRIMARY",
     "$DNS_SECONDARY"

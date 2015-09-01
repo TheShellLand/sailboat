@@ -20,3 +20,22 @@
     }
   ]
 }
+
+
+{
+ "brand": "joyent",
+ "image_uuid": "5c7d0d24-3475-11e5-8e67-27953a8b237e",
+ "alias": "web01",
+ "hostname": "web01",
+ "max_physical_memory": 512,
+ "quota": 20,
+ "resolvers": ["8.8.8.8", "208.67.220.220"],
+ "nics": [
+  {
+    "nic_tag": "admin",
+    "ip": "10.88.88.52",
+    "netmask": "255.255.255.0",
+    "gateway": "10.88.88.2"
+  }
+ ]
+}
