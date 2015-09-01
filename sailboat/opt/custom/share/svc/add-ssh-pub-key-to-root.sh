@@ -8,7 +8,7 @@
 
 SSH="/root/.ssh";
 AuthorizedKeys="/root/.ssh/authorized_keys";
-KeyImport="/usbkey/sailboat/keys";
+KeyImport="/opt/custom/ssh-keys";
 
 
 
