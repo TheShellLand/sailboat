@@ -28,14 +28,6 @@
       "gateway": "10.0.1.1",
       "netmask": "255.255.255.0"
     }
-  ],
-  "disks": [
-    {
-      "image_uuid": "3162a91e-8b5d-11e2-a78f-9780813f9142",
-      "model": "virtio | ide | scsi",
-      "compression": "on,off,lzjb,gzip,gzip-N,zle",
-      "boot": true
-    }
   ]
 }
 
