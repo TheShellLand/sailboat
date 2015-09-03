@@ -1,7 +1,7 @@
 #!/bin/sh
 # SmartOS script creating VMs
 #
-# Provides an easy to use script for creating LX, Joyent, and KVM zones
+# Provides an easy to use script for creating LX, OS, and KVM zones
 # This de-encumbers the use of manual typing and creates json vm spec automatically
 # Also, I stopped wanting to refer to an endless number of json files for figuring out what options to use for which
 #  type of VM I was creating
@@ -17,6 +17,7 @@ function _EasyTiger(){
   export DIFFICULTY=$1
 
   choose_vm_type
+  return $?
 
 }
 
@@ -24,33 +25,56 @@ function choose_vm_type(){
 
   # LX, OS, or KVM
   echo "Select a VM type"
-  select type in "SmartOS - Native, allows RAM over provisioning" "LX - Native, runs linux flavors, yum" "KVM - Windows, Mac OS X, any ISO"; do
+  select type in "OS - Native, allows RAM over provisioning" "LX - Native, runs linux flavors, yum" "KVM - Linux image" "ISO - Windows, Linux, Mac, any ISO"; do
     case option in
-      "OS - Native, allows RAM over provisioning") create_vm_smartos; return $? ;;
+      "OS - Native, allows RAM over provisioning") create_vm_os; return $? ;;
       "LX - Native, runs linux flavors, yum") create_vm_lx; return $? ;;
       "KVM - Linux image") create_vm_kvm; return $? ;;
-      "ISO - Windows, Mac OS X, any ISO") create_vm_kvm; return $? ;;
+      "ISO - Windows, Linux, Mac, any ISO") create_vm_iso; return $? ;;
     esac
   done
+  return $?
 
 }
 
-function create_vm_smartos(){
+function pre_check(){
 
-  # Create Joyent SmartOS zone VM
+  # Location for new VM specs
+  NEW_VM_SPECS="/opt/custom/json/SAVED_CUSTOM_VM"
+  if [ ! -d "$NEW_VM_SPECS" ]; then mkdir "$NEW_VM_SPECS"; fi
+  return $?
+
+}
+
+
+function new_vm_filename(){
+
+  # Name for the new VM spec
+  # type_alias_(link)(vnics).json (e.g. os__elasticdb__elastic0eshard0.json, kvm__win__nat0external0__sql0internal0.json)
+  if [ "$1" == "" ]; then VM_FILENAME=""; fi
+  if [ -z "$VM_FILENAME" ]; then VM_FILENAME="$1"; fi
+  if [ ! -z "$1" ]; then VM_FILENAME="$VM_FILENAME__$1"; fi
+  return $?
+
+}
+
+function create_vm_os(){
+
+  # Create OS zone VM
   vmadm create << EOF
 {
-  "nics": [{"interface": "$INTERFACE", "nic_tag": "$NICTAG", "model": "$NICMODEL", "ip": "$IPADDRESS", "gateway": "$GATEWAY", "netmask": "$NETMASK", "primary": $PRIMARY}],
+  "nics": [{"interface": "$INTERNAL_IF_NAME", "nic_tag": "$NICTAG", "model": "$NICMODEL", "ip": "$IPADDRESS", "gateway": "$GATEWAY", "netmask": "$NETMASK", "primary": $PRIMARY}],
   "resolvers": ["$DNS_PRIMARY", "$DNS_SECONDARY"],
-  "image_uuid": "$IMAGE_UUID",
-  "quota": "$DISK_QUOTA",
+  "image_uuid": "$IMAGE_IMPORT_UUID",
+  "quota": "$DISK_IN_GiB",
   "cpu_cap": $CPU_CAP,
-  "max_physical_memory": $MAX_MEM,
+  "max_physical_memory": $MAX_MEM_IN_MB,
   "autoboot": $AUTOBOOT,
   "alias": "$ALIAS",
   "brand": "joyent"
 }
 EOF
+  return $?
 
 }
 
@@ -60,18 +84,19 @@ function create_vm_lx(){
   # Create LX VM
   vmadm create << EOF
 {
-  "nics": [{"interface": "$INTERFACE", "nic_tag": "$NICTAG", "model": "$NICMODEL", "ip": "$IPADDRESS", "gateway": "$GATEWAY", "netmask": "$NETMASK", "primary": $PRIMARY}],
+  "nics": [{"interface": "$INTERNAL_IF_NAME", "nic_tag": "$NICTAG", "model": "$VIRTIO_E1000_RTL8139", "ip": "$IPADDRESS", "gateway": "$GATEWAY", "netmask": "$NETMASK", "primary": $PRIMARY}],
   "resolvers": ["$DNS_PRIMARY", "$DNS_SECONDARY"],
-  "image_uuid": "$IMAGE_UUID",
-  "quota": "$DISK_QUOTA",
+  "image_uuid": "$IMAGE_IMPORT_UUID",
+  "quota": "$DISK_IN_GiB",
   "cpu_cap": $CPU_CAP,
-  "max_physical_memory": $MAX_MEM,
-  "autoboot": $AUTOBOOT,
+  "max_physical_memory": $MAX_MEM_IN_MB,
+  "autoboot": $TRUE_FALSE,
   "alias": "$ALIAS",
   "kernel_version": "3.13.0",
   "brand": "lx"
 }
 EOF
+  return !?
 
 }
 
@@ -81,13 +106,33 @@ function create_vm_kvm(){
   # Create KVM VM
   vmadm create << EOF
 {
-  "nics": [{"interface": "$INTERFACE", "nic_tag": "$NICTAG", "model": "virtio, e1000, rtl8139", "ip": "$IPADDRESS", "gateway": "$GATEWAY", "netmask": "$NETMASK", "primary": true}],
+  "nics": [{"interface": "$INTERFACE", "nic_tag": "$NICTAG", "model": "$VIRTIO_E1000_RTL8139", "ip": "$IPADDRESS", "gateway": "$GATEWAY", "netmask": "$NETMASK", "primary": true}],
   "resolvers": ["$DNS_PRIMARY", "$DNS_SECONDARY"],
-  "disks": [{"image_uuid": "3162a91e-8b5d-11e2-a78f-9780813f9142", "model": "virtio | ide | scsi", "compression": "on,off,lzjb,gzip,gzip-N,zle", "boot": true}],
-  "vcpus": "number of VCPU",
-  "ram": number in MB,
-  "autoboot": true|false,
-  "alias": "string",
+  "disks": [{"image_uuid": "$IMAGE_UUID", "boot": $BOOTABLE, "model": "$DISK_MODEL", "compression": "$COMPRESSION"}],
+  "vcpus": "$VCPU",
+  "ram": $RAM_IN_MB,
+  "autoboot": $AUTO_BOOT,
+  "alias": "$ALIAS",
+  "brand": "kvm"
+}
+EOF
+  return $?
+
+}
+
+
+function create_vm_iso(){
+
+  # Create ISO VM
+  vmadm create << EOF
+{
+  "nics": [{"interface": "$INTERFACE", "nic_tag": "$NICTAG", "model": "$VIRTIO_E1000_RTL8139", "ip": "$IPADDRESS", "gateway": "$GATEWAY", "netmask": "$NETMASK", "primary": true}],
+  "resolvers": ["$DNS_PRIMARY", "$DNS_SECONDARY"],
+  "disks": [{"boot": $BOOTABLE,"model": "$DISK_MODEL","size": $DISK_IN_MB,"compression": "$COMPRESSION"}],
+  "vcpus": "$VCPU",
+  "ram": $RAM_IN_MB,
+  "autoboot": $AUTO_BOOT,
+  "alias": "$ALIAS",
   "brand": "kvm"
 }
 EOF
