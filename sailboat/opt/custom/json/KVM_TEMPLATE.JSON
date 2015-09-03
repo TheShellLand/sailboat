@@ -1,37 +1,10 @@
 {
-  "brand": "kvm",
-  "alias": "$ALIAS",
-  "autoboot": "true | false",
-  "ram": "$RAM",
-  "vcpus": "$VCPU",
-  "resolvers": [
-    "$DNS_PRIMARY",
-    "$DNS_SECONDARY"
-  ],
-  "nics": [
-    {
-      "interface": "$INTERNAL_VM_INTERFACE",
-      "nic_tag": "$NICTAG",
-      "ip": "$IP_ADDRESS",
-      "gateway": "$IP_GATEWAY",
-      "netmask": "$IP_NETMASK"
-    }
-  ],
-  "nics": [
-    {
-      "interface": "$INTERNAL_VM_INTERFACE",
-      "nic_tag": "$NICTAG",
-      "ip": "$IP_ADDRESS",
-      "gateway": "$IP_GATEWAY",
-      "netmask": "$IP_NETMASK"
-    }
-  ],
-  "disks": [
-    {
-      "image_uuid": "3162a91e-8b5d-11e2-a78f-9780813f9142",
-      "model": "virtio | ide | scsi",
-      "compression": "on,off,lzjb,gzip,gzip-N,zle",
-      "boot": true
-    }
-  ]
+  "nics": [{"interface": "$INTERFACE", "nic_tag": "$NICTAG", "model": "virtio, e1000, rtl8139", "ip": "$IPADDRESS", "gateway": "$GATEWAY", "netmask": "$NETMASK", "primary": true}],
+  "resolvers": ["$DNS_PRIMARY", "$DNS_SECONDARY"],
+  "disks": [{"image_uuid": "3162a91e-8b5d-11e2-a78f-9780813f9142", "model": "virtio | ide | scsi", "compression": "on,off,lzjb,gzip,gzip-N,zle", "boot": true}],
+  "vcpus": "number of VCPU",
+  "ram": number in MB,
+  "autoboot": true|false,
+  "alias": "string",
+  "brand": "kvm"
 }
