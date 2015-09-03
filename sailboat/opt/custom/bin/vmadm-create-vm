@@ -26,25 +26,26 @@ function choose_vm_type(){
   echo "Select a VM type"
   select type in "SmartOS - Native, allows RAM over provisioning" "LX - Native, runs linux flavors, yum" "KVM - Windows, Mac OS X, any ISO"; do
     case option in
-      "SmartOS - Native, allows RAM over provisioning") create_vm_spec_smartos ;;
-      "LX - Native, runs linux flavors, yum") create_vm_spec_lx ;;
-      "KVM - Windows, Mac OS X, any ISO") create_vm_spec_kvm ;;
+      "OS - Native, allows RAM over provisioning") create_vm_smartos; return $? ;;
+      "LX - Native, runs linux flavors, yum") create_vm_lx; return $? ;;
+      "KVM - Linux image") create_vm_kvm; return $? ;;
+      "ISO - Windows, Mac OS X, any ISO") create_vm_kvm; return $? ;;
     esac
   done
 
 }
 
-function create_vm_spec_smartos(){
+function create_vm_smartos(){
 
   # Create Joyent SmartOS zone VM
-  vmadm create <<EOF
+  vmadm create << EOF
 {
   "nics": [{"interface": "$INTERFACE", "nic_tag": "$NICTAG", "model": "$NICMODEL", "ip": "$IPADDRESS", "gateway": "$GATEWAY", "netmask": "$NETMASK", "primary": $PRIMARY}],
   "resolvers": ["$DNS_PRIMARY", "$DNS_SECONDARY"],
-  "image_uuid": "$IMAGEUUID",
-  "quota": "$QUOTA",
-  "cpu_cap": $CPUCAP,
-  "max_physical_memory": $MAXMEM,
+  "image_uuid": "$IMAGE_UUID",
+  "quota": "$DISK_QUOTA",
+  "cpu_cap": $CPU_CAP,
+  "max_physical_memory": $MAX_MEM,
   "autoboot": $AUTOBOOT,
   "alias": "$ALIAS",
   "brand": "joyent"
@@ -53,17 +54,18 @@ EOF
 
 }
 
-function create_vm_spec_lx(){
+
+function create_vm_lx(){
 
   # Create LX VM
   vmadm create << EOF
 {
   "nics": [{"interface": "$INTERFACE", "nic_tag": "$NICTAG", "model": "$NICMODEL", "ip": "$IPADDRESS", "gateway": "$GATEWAY", "netmask": "$NETMASK", "primary": $PRIMARY}],
   "resolvers": ["$DNS_PRIMARY", "$DNS_SECONDARY"],
-  "image_uuid": "$IMAGEUUID",
-  "quota": "$QUOTA",
-  "cpu_cap": $CPUCAP,
-  "max_physical_memory": $MAXMEM,
+  "image_uuid": "$IMAGE_UUID",
+  "quota": "$DISK_QUOTA",
+  "cpu_cap": $CPU_CAP,
+  "max_physical_memory": $MAX_MEM,
   "autoboot": $AUTOBOOT,
   "alias": "$ALIAS",
   "kernel_version": "3.13.0",
@@ -71,10 +73,10 @@ function create_vm_spec_lx(){
 }
 EOF
 
-
 }
 
-function create_vm_spec_kvm(){
+
+function create_vm_kvm(){
 
   # Create KVM VM
   vmadm create << EOF
@@ -90,13 +92,16 @@ function create_vm_spec_kvm(){
 }
 EOF
 
+}
+
+
 function create_vm_spec_kvm_image_import(){
 
-# Required:
-# $importedUUID
+  # Required:
+  # $importedUUID
 
-# Create KVM VM from Imported Image
-vmadm create << EOF
+  # Create KVM VM from Imported Image
+  vmadm create << EOF
 {
   "brand": "kvm",
   "resolvers": ["$DNS_PRIMARY","$DNS_SECONDARY"],
@@ -121,11 +126,9 @@ vmadm create << EOF
 }
 EOF
 
-
 }
 
 
-function create
 
 
 # MAIN
