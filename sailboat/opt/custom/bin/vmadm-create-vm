@@ -39,27 +39,15 @@ function create_vm_spec_smartos(){
   # Create Joyent SmartOS zone VM
   vmadm create <<EOF
 {
-  "autoboot": true,
-  "brand": "joyent",
-  "image_uuid": "d34c301e-10c3-11e4-9b79-5f67ca448df0",
-  "max_physical_memory": 3072,
-  "cpu_cap": 100,
-  "alias": "fifo",
-  "quota": "40",
-  "resolvers": [
-    "8.8.8.8",
-    "8.8.4.4"
-  ],
-  "nics": [
-    {
-      "interface": "eth0",
-      "nic_tag": "admin",
-      "ip": "10.1.1.240",
-      "gateway": "10.1.1.1",
-      "netmask": "255.255.255.0",
-      "primary": "true"
-    }
-  ]
+  "nics": [{"interface": "$INTERFACE", "nic_tag": "$NICTAG", "model": "$NICMODEL", "ip": "$IPADDRESS", "gateway": "$GATEWAY", "netmask": "$NETMASK", "primary": $PRIMARY}],
+  "resolvers": ["$DNS_PRIMARY", "$DNS_SECONDARY"],
+  "image_uuid": "$IMAGEUUID",
+  "quota": "$QUOTA",
+  "cpu_cap": $CPUCAP,
+  "max_physical_memory": $MAXMEM,
+  "autoboot": $AUTOBOOT,
+  "alias": "$ALIAS",
+  "brand": "joyent"
 }
 EOF
 
@@ -70,20 +58,16 @@ function create_vm_spec_lx(){
   # Create LX VM
   vmadm create << EOF
 {
-  "brand": "lx",
+  "nics": [{"interface": "$INTERFACE", "nic_tag": "$NICTAG", "model": "$NICMODEL", "ip": "$IPADDRESS", "gateway": "$GATEWAY", "netmask": "$NETMASK", "primary": $PRIMARY}],
+  "resolvers": ["$DNS_PRIMARY", "$DNS_SECONDARY"],
+  "image_uuid": "$IMAGEUUID",
+  "quota": "$QUOTA",
+  "cpu_cap": $CPUCAP,
+  "max_physical_memory": $MAXMEM,
+  "autoboot": $AUTOBOOT,
+  "alias": "$ALIAS",
   "kernel_version": "3.13.0",
-  "max_physical_memory": 2048,
-  "image_uuid": "",
-  "resolvers": ["8.8.8.8","8.8.4.4"],
-  "nics": [
-    {
-      "interface": "eth0",
-      "nic_tag": "admin",
-      "ip": "dhcp",
-      "netmask": "dhcp",
-      "gateway": "dhcp",
-    }
-  ]
+  "brand": "lx"
 }
 EOF
 
@@ -93,8 +77,18 @@ EOF
 function create_vm_spec_kvm(){
 
   # Create KVM VM
-
+  vmadm create << EOF
+{
+  "nics": [{"interface": "$INTERFACE", "nic_tag": "$NICTAG", "model": "virtio, e1000, rtl8139", "ip": "$IPADDRESS", "gateway": "$GATEWAY", "netmask": "$NETMASK", "primary": true}],
+  "resolvers": ["$DNS_PRIMARY", "$DNS_SECONDARY"],
+  "disks": [{"image_uuid": "3162a91e-8b5d-11e2-a78f-9780813f9142", "model": "virtio | ide | scsi", "compression": "on,off,lzjb,gzip,gzip-N,zle", "boot": true}],
+  "vcpus": "number of VCPU",
+  "ram": number in MB,
+  "autoboot": true|false,
+  "alias": "string",
+  "brand": "kvm"
 }
+EOF
 
 function create_vm_spec_kvm_image_import(){
 
