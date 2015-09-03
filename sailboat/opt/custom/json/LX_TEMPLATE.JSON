@@ -1,37 +1,21 @@
 {
-  "brand": "lx | kvm | joyent",
-  "alias": "",
-  "autoboot": "true | false",
-  "ram": "",
-  "vcpus": "",
-  "resolvers": [
-    "$DNS_PRIMARY",
-    "$DNS_SECONDARY"
-  ],
-  "nics": [
-    {
-      "interface": "newnet0",
-      "nic_tag": "net0",
-      "model": "virtio",
-      "ip": "dhcp",
-      "primary": "true"
-    }
-  ],
-  "nics": [
-    {
-      "interface": "newnet1",
-      "nic_tag": "net1",
-      "ip": "10.0.1.6",
-      "gateway": "10.0.1.1",
-      "netmask": "255.255.255.0"
-    }
-  ],
-  "disks": [
-    {
-      "image_uuid": "3162a91e-8b5d-11e2-a78f-9780813f9142",
-      "model": "virtio | ide | scsi",
-      "compression": "on,off,lzjb,gzip,gzip-N,zle",
-      "boot": true
-    }
-  ]
+  "nics": [{"interface": "$INTERFACE", "nic_tag": "$NICTAG", "model": "virtio, e1000, rtl8139", "ip": "$IPADDRESS", "gateway": "$GATEWAY", "netmask": "$NETMASK", "primary": true}],
+  "resolvers": ["$DNS_PRIMARY", "$DNS_SECONDARY"],
+  "image_uuid": "imported image UUID",
+  "quota": "number in GiB",
+  "cpu_cap": 100=1cpu,
+  "max_physical_memory": number in MB,
+  "autoboot": true|false,
+  "alias": "string",
+  "kernel_version": "3.13.0",
+  "brand": "lx"
+}
+
+
+{
+  "brand": "lx",
+  "kernel_version": "3.13.0",
+
+
+
 }
