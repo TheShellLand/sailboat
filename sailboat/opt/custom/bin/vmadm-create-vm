@@ -21,27 +21,54 @@ function _EasyTiger(){
 
 }
 
+
+function pre_check(){
+
+  # Location for new VM specs
+  NEW_VM_SPECS="/opt/custom/json/SAVED_CUSTOM_VM"
+  echo "[*] New specs located in: $NEW_VM_SPECS"
+  if [ ! -d "$NEW_VM_SPECS" ]; then mkdir -p "$NEW_VM_SPECS"; fi
+  return $?
+
+}
+
+
 function choose_vm_type(){
 
   # LX, OS, or KVM
   echo "Select a VM type"
   select type in "OS - Native, allows RAM over provisioning" "LX - Native, runs linux flavors, yum" "KVM - Linux image" "ISO - Windows, Linux, Mac, any ISO"; do
     case option in
-      "OS - Native, allows RAM over provisioning") create_vm_os; return $? ;;
-      "LX - Native, runs linux flavors, yum") create_vm_lx; return $? ;;
-      "KVM - Linux image") create_vm_kvm; return $? ;;
-      "ISO - Windows, Linux, Mac, any ISO") create_vm_iso; return $? ;;
+      "OS - Native, allows RAM over provisioning") create_vm os ; return $? ;;
+      "LX - Native, runs linux flavors, yum") create_vm lx; return $? ;;
+      "KVM - Linux image") create_vm kvm; return $? ;;
+      "ISO - Windows, Linux, Mac, any ISO") create_vm iso; return $? ;;
     esac
   done
   return $?
 
 }
 
-function pre_check(){
 
-  # Location for new VM specs
-  NEW_VM_SPECS="/opt/custom/json/SAVED_CUSTOM_VM"
-  if [ ! -d "$NEW_VM_SPECS" ]; then mkdir "$NEW_VM_SPECS"; fi
+function create_vm(){
+
+  TYPE="$1"
+
+  if [ "$TYPE" == "os" ]; then create_vm_os; return $?; fi
+  if [ "$TYPE" == "lx" ]; then create_vm_lx; return $?; fi
+  if [ "$TYPE" == "iso" ]; then create_vm_iso; return $?; fi
+  if [ "$TYPE" == "kvm" ]; then create_vm_kvm; return $?; fi
+
+}
+
+
+function text_sanitize(){
+
+  STRING="$1"
+  CLEAN=${STRING// /}
+  CLEAN=${CLEAN//[^a-zA-Z0-9_]/}
+  output_sanatized="$CLEAN"
+  export output_sanatized
   return $?
 
 }
@@ -51,12 +78,18 @@ function new_vm_filename(){
 
   # Name for the new VM spec
   # type_alias_(link)(vnics).json (e.g. os__elasticdb__elastic0eshard0.json, kvm__win__nat0external0__sql0internal0.json)
-  if [ "$1" == "" ]; then VM_FILENAME=""; fi
-  if [ -z "$VM_FILENAME" ]; then VM_FILENAME="$1"; fi
-  if [ ! -z "$1" ]; then VM_FILENAME="$VM_FILENAME__$1"; fi
+  # All text will run though text_sanitize(); only characters allowed are regex [a-zA-Z0-9_]
+
+  text_sanitize "$1"
+  CHOMP="$output_sanatized"
+
+  if [ "$CHOMP" == "" ]; then VM_FILENAME=""; export VM_FILENAME; fi
+  if [ -z "$VM_FILENAME" ]; then VM_FILENAME="$CHOMP"; export VM_FILENAME; return $?; fi
+  if [ ! -z "$CHOMP" ]; then VM_FILENAME="$VM_FILENAME"__"$CHOMP"; export VM_FILENAME; return $?; fi
   return $?
 
 }
+
 
 function create_vm_os(){
 
@@ -177,6 +210,8 @@ EOF
 
 
 # MAIN
+
+pre_check
 
 echo "How would you like to create your VM today?"
 select TYPE in "Just the simple essentials!" "I want to see all the options!"; do
