@@ -83,7 +83,7 @@ function new_vm_filename(){
   text_sanitize "$1"
   CHOMP="$output_sanatized"
 
-  if [ "$CHOMP" == "" ]; then VM_FILENAME=""; export VM_FILENAME; fi
+  if [ -z "$CHOMP" ]; then VM_FILENAME=""; export VM_FILENAME; fi
   if [ -z "$VM_FILENAME" ]; then VM_FILENAME="$CHOMP"; export VM_FILENAME; return $?; fi
   if [ ! -z "$CHOMP" ]; then VM_FILENAME="$VM_FILENAME"__"$CHOMP"; export VM_FILENAME; return $?; fi
   return $?
