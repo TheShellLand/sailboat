@@ -99,17 +99,19 @@ function new_vm_filename(){
 
 }
 
-# This does not work
+# This does work, but bash will evaluate the double quotations
+# temp_vm_spec "how": "about" somemore
+# how: about somemore
 function temp_vm_spec(){
 
   # All VM specs write input to this temporary file
-  if [ -z "$@" ]; then
+  if [ -z "$1" ]; then
     cat > $TEMPNAME <<EOF
 {
 EOF
   fi
 
-  if [ ! -z "$@" ]; then
+  if [ ! -z "$1" ]; then
     cat >> $TEMPNAME <<EOF
 $@
 EOF
