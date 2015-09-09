@@ -72,7 +72,7 @@ function text_sanitize(){
   # Sanatizes input, removes all spaces, and non-alphanumeric charaters, also allows underscores
   # Used mainly for new_vm_filename()
 
-  STRING="$1"
+  STRING="$@"
   CLEAN=${STRING// /}
   CLEAN=${CLEAN//[^a-zA-Z0-9_]/}
   output_sanatized="$CLEAN"
@@ -98,19 +98,20 @@ function new_vm_filename(){
   return $?
 
 }
+
+# This does not work
 function temp_vm_spec(){
 
   # All VM specs write input to this temporary file
-  touch $TEMPNAME
-  if [ -z $1 ]; then
+  if [ -z "$@" ]; then
     cat > $TEMPNAME <<EOF
 {
 EOF
   fi
 
-  if [ ! -z "$1" ]; then
+  if [ ! -z "$@" ]; then
     cat >> $TEMPNAME <<EOF
-$1
+$@
 EOF
   fi
   return $?
@@ -127,11 +128,16 @@ EOF
 function vm_spec_resolvers(){
 
 
-  cat >> $TEMPNAME <<EOF
+  if [ -z $@ ]; then
+    cat >> $TEMPNAME <<EOF
 "resolvers": ["$DNS_PRIMARY", "$DNS_SECONDARY"],
 EOF
+fi
+
+
 }
-vm_spec_image_uuid(){
+
+function os_spec_image_uuid(){
 
   "image_uuid": "$IMAGE_IMPORT_UUID",
 
