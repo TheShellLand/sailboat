@@ -25,9 +25,12 @@ function _EasyTiger(){
 function pre_check(){
 
   # Location for new VM specs
-  NEW_VM_SPECS="/opt/custom/json/SAVED_CUSTOM_VM"
+  NEW_VM_SPECS="/opt/custom/json/new_vm_specs"
   echo "[*] New specs located in: $NEW_VM_SPECS"
   if [ ! -d "$NEW_VM_SPECS" ]; then mkdir -p "$NEW_VM_SPECS"; fi
+  # New temp filename
+  TEMPNAME="$(uuid).temp.json"
+  export TEMPNAME
   return $?
 
 }
@@ -53,16 +56,21 @@ function choose_vm_type(){
 function create_vm(){
 
   TYPE="$1"
+  export TYPE
 
   if [ "$TYPE" == "os" ]; then create_vm_os; return $?; fi
   if [ "$TYPE" == "lx" ]; then create_vm_lx; return $?; fi
   if [ "$TYPE" == "iso" ]; then create_vm_iso; return $?; fi
   if [ "$TYPE" == "kvm" ]; then create_vm_kvm; return $?; fi
+  return $?
 
 }
 
 
 function text_sanitize(){
+
+  # Sanatizes input, removes all spaces, and non-alphanumeric charaters, also allows underscores
+  # Used mainly for new_vm_filename()
 
   STRING="$1"
   CLEAN=${STRING// /}
@@ -76,20 +84,74 @@ function text_sanitize(){
 
 function new_vm_filename(){
 
-  # Name for the new VM spec
-  # type_alias_(link)(vnics).json (e.g. os__elasticdb__elastic0eshard0.json, kvm__win__nat0external0__sql0internal0.json)
+  # Naming scheme for the new VM spec file: type_alias_(link)(vnics).json
+  # (e.g. os__elasticdb__elastic0eshard0.json, kvm__win__nat0external0__sql0internal0.json)
   # All text will run though text_sanitize(); only characters allowed are regex [a-zA-Z0-9_]
 
   text_sanitize "$1"
   CHOMP="$output_sanatized"
 
-  if [ -z "$CHOMP" ]; then VM_FILENAME=""; export VM_FILENAME; fi
+  if [ -z "$CHOMP" ]; then VM_FILENAME=""; export VM_FILENAME; return $?; fi
   if [ -z "$VM_FILENAME" ]; then VM_FILENAME="$CHOMP"; export VM_FILENAME; return $?; fi
-  if [ ! -z "$CHOMP" ]; then VM_FILENAME="$VM_FILENAME"__"$CHOMP"; export VM_FILENAME; return $?; fi
+  if [ ! -z "$VM_FILENAME" ]; then VM_FILENAME="$VM_FILENAME"__"$CHOMP"; export VM_FILENAME; return $?; fi
+  if [ "$CHOMP" == ".json" ]; then VM_FILENAME="$VM_FILENAME".json; export VM_FILENAME; return $?; fi
+  return $?
+
+}
+function temp_vm_spec(){
+
+  # All VM specs write input to this temporary file
+  touch $TEMPNAME
+  if [ -z $1 ]; then
+    cat > $TEMPNAME <<EOF
+{
+EOF
+  fi
+
+  if [ ! -z "$1" ]; then
+    cat >> $TEMPNAME <<EOF
+$1
+EOF
+  fi
   return $?
 
 }
 
+function vm_spec_nics(){
+
+  cat >> $TEMPNAME <<EOF
+"nics": [{"interface": "$INTERNAL_IF_NAME", "nic_tag": "$NICTAG", "model": "$NICMODEL", "ip": "$IPADDRESS", "gateway": "$GATEWAY", "netmask": "$NETMASK", "primary": $PRIMARY}],
+EOF
+
+}
+function vm_spec_resolvers(){
+
+
+  cat >> $TEMPNAME <<EOF
+"resolvers": ["$DNS_PRIMARY", "$DNS_SECONDARY"],
+EOF
+}
+vm_spec_image_uuid(){
+
+  "image_uuid": "$IMAGE_IMPORT_UUID",
+
+}
+
+
+function os_spec(){
+
+
+}
+
+function lx_spec(){
+
+
+}
+
+function kvm_spec(){
+
+
+}
 
 function create_vm_os(){
 
