@@ -25,12 +25,23 @@ function _EasyTiger(){
 function pre_check(){
 
   # Location for new VM specs
-  NEW_VM_SPECS="/opt/custom/json/new_vm_specs"
-  echo "[*] New specs located in: $NEW_VM_SPECS"
-  if [ ! -d "$NEW_VM_SPECS" ]; then mkdir -p "$NEW_VM_SPECS"; fi
+  SPECS_DIR="/opt/custom/json/new_vm_specs"
+  export SPECS_DIR
+  echo "[*] New specs located in: $SPECS_DIR"
+  if [ ! -d "$SPECS_DIR" ]; then mkdir -p "$SPECS_DIR"; fi
+
+  # New temp file
+  pre_check_temp
+  return $?
+
+}
+function pre_check_temp(){
+
   # New temp filename
-  TEMPNAME="$(uuid).temp.json"
-  export TEMPNAME
+  TEMPSPEC="$(uuid).temp.json"
+  export TEMPSPEC
+  TEMP="$SPECS_DIR/$TEMPSPEC"
+  export TEMP
   return $?
 
 }
@@ -95,56 +106,180 @@ function new_vm_filename(){
   if [ -z "$VM_FILENAME" ]; then VM_FILENAME="$CHOMP"; export VM_FILENAME; return $?; fi
   if [ ! -z "$VM_FILENAME" ]; then VM_FILENAME="$VM_FILENAME"__"$CHOMP"; export VM_FILENAME; return $?; fi
   if [ "$CHOMP" == ".json" ]; then VM_FILENAME="$VM_FILENAME".json; export VM_FILENAME; return $?; fi
+  export NEW_VM="$SPECS_DIR/$VM_FILENAME"
   return $?
 
 }
 
-# This does work, but bash will evaluate the double quotations
-# temp_vm_spec "how": "about" somemore
-# how: about somemore
-function temp_vm_spec(){
 
-  # All VM specs write input to this temporary file
-  if [ -z "$1" ]; then
-    cat > $TEMPNAME <<EOF
-{
-EOF
-  fi
 
-  if [ ! -z "$1" ]; then
-    cat >> $TEMPNAME <<EOF
-$@
-EOF
-  fi
-  return $?
 
-}
+
 
 function vm_spec_nics(){
 
-  cat >> $TEMPNAME <<EOF
+  : '
+  global: interface
+    Name of the interface within the VM ("eth0")
+
+  global: nic_tag
+    nic_tag or interface name that the virtual NIC is attached to
+
+  KVM: model
+    Driver for this NIC (virtio, e1000, rtl8139)
+
+  global: ip
+    IPv4 Address for NIC, or "dhcp"
+
+  global: gateway
+    Gateway for NIC
+
+  global: netmask
+    Netmask for NIC
+
+  global: primary
+    Sets this NICs gateway as the default gw
+
+  global: dhcp_server
+    Allow the VM on this NIC to act as a DHCP Server
+
+  allow_dhcp_spoofing
+  allow_ip_spoofing
+  allow_mac_spoofing
+  allow_restricted_traffic
+  allow_unfiltered_promisc
+  blocked_outgoing_ports
+  '
+
+  if [ $TYPE == kvm ]; then
+  cat >> $TEMP << EOF
 "nics": [{"interface": "$INTERNAL_IF_NAME", "nic_tag": "$NICTAG", "model": "$NICMODEL", "ip": "$IPADDRESS", "gateway": "$GATEWAY", "netmask": "$NETMASK", "primary": $PRIMARY}],
+EOF
+  fi
+
+  if [ ! $TYPE == kvm ]; then
+  cat >> $TEMP << EOF
+"nics": [{"interface": "$INTERNAL_IF_NAME", "nic_tag": "$NICTAG", "ip": "$IPADDRESS", "gateway": "$GATEWAY", "netmask": "$NETMASK", "primary": $PRIMARY}],
+EOF
+  fi
+
+}
+
+function vm_spec_resolvers(){
+
+  : '
+  global: resolvers
+    For OS VMs, this value sets the resolvers which get put into
+    /etc/resolv.conf at VM creation. If maintain_resolvers is set to
+    true, updating this property will also update the resolvers in
+    /etc/resolv.conf. For KVM VMs these will get passed as the resolvers
+    with DHCP responses.
+  '
+
+  if [ -z $@ ]; then
+    cat >> $TEMP << EOF
+"resolvers": ["$DNS_PRIMARY", "$DNS_SECONDARY"],
+EOF
+  fi
+
+}
+
+function vm_spec_quota(){
+
+  : '
+  global: quota
+    This sets a quota on the zone filesystem. For OS VMs, this value is the
+    space actually visible/usable in the guest. For KVM VMs, this value is
+    the quota for the Zone containing the VM, which is not directly
+    available to users.
+
+    Set quota to 0 to disable (ie. for no quota).
+  '
+
+  default=0
+
+  cat >> $TEMP << EOF
+"quota": "$DISK_IN_GiB",
 EOF
 
 }
-function vm_spec_resolvers(){
 
+function os_spec_cpucap(){
 
-  if [ -z $@ ]; then
-    cat >> $TEMPNAME <<EOF
-"resolvers": ["$DNS_PRIMARY", "$DNS_SECONDARY"],
+  : '
+  global: cpu_cap
+    Sets a limit on the amount of CPU time that can be used by a VM. The
+    unit used is the percentage of a single CPU that can be used by the VM.
+    Eg. a value of 300 means up to 3 full CPUs.
+  '
+  default=100
+
+  echo "Number of CPUs (a value of 300 means up to 3 full CPUs):"
+  select CPU_CAP in "100" "200" "300" "400" "Custom"; do
+    case $CPU_CAP in
+      100) CPU_CAP=100; break;;
+      200) CPU_CAP=200; break;;
+      300) CPU_CAP=300; break;;
+      400) CPU_CAP=400; break;;
+      Custom) read -p "Set custom CPU value: " CPU_CAP; break;;
+    esac
+  done
+  echo "[*] cpu_cap: $CPU_CAP"
+  cat >> $TEMP << EOF
+"cpu_cap": $CPU_CAP,
 EOF
-fi
+  return $?
 
+}
+
+function os_spec_max_physical_memory(){
+
+  : '
+  global: max_physical_memory
+    The maximum amount of memory on the host that the VM is allowed to use.
+    For KVM VMs, this value cannot be lower than ram and should be
+    ram + 1024.
+  '
+
+  cat >> $TEMP << EOF
+"max_physical_memory": $MAX_MEM_IN_MB,
+EOF
+
+}
+
+function vm_spec_autoboot(){
+
+  : '
+  global: autoboot
+    Boolean indicating that a zone should be booted automatically at
+    system boot.  Note that if the zones service is disabled, the zone
+    will not autoboot, regardless of the setting of this property. You
+    enable the zones service with a svcadm command, such as:
+
+      svcadm enable svc:/system/zones:default
+  '
+
+  cat >> $TEMP << EOF
+"autoboot": $AUTOBOOT,
+EOF
 
 }
 
 function os_spec_image_uuid(){
 
-  "image_uuid": "$IMAGE_IMPORT_UUID",
+  cat >> $TEMP << EOF
+"image_uuid": "$IMAGE_IMPORT_UUID",
+EOF
 
 }
 
+function lx_spec_image_uuid(){
+
+  cat >> $TEMP << EOF
+"image_uuid": "$IMAGE_IMPORT_UUID",
+EOF
+
+}
 
 function os_spec(){
 
@@ -158,6 +293,17 @@ function lx_spec(){
 
 function kvm_spec(){
 
+
+}
+
+function vmadm_validate(){
+
+  # Validates the new vm spec before renaming to $VM_FILENAME
+  vmadm validate create -f "$TEMP" >/dev/null 2>/dev/null
+  # exit code check
+  if [ $? == 0 ]; then echo "[*] JSON Validated"; mv "$TEMP" "$NEW_VM"; return $?; fi
+  if [ $? -gt 0 ]; then echo "[ERROR] Validating $TEMPSPEC"; exit 0; fi
+  return $?
 
 }
 
@@ -275,7 +421,6 @@ function create_vm_spec_kvm_image_import(){
 EOF
 
 }
-
 
 
 
