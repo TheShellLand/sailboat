@@ -1,5 +1,5 @@
 {
-  "nics": [{"interface": "$INTERFACE", "nic_tag": "$NICTAG", "model": "virtio, e1000, rtl8139", "ip": "$IPADDRESS", "gateway": "$GATEWAY", "netmask": "$NETMASK", "primary": true}],
+  "nics": [{"interface": "$INTERFACE", "nic_tag": "$NICTAG", "ip": "$IPADDRESS", "gateway": "$GATEWAY", "netmask": "$NETMASK", "primary": true}],
   "resolvers": ["$DNS_PRIMARY", "$DNS_SECONDARY"],
   "image_uuid": "imported image UUID",
   "quota": "number in GiB",
