@@ -96,6 +96,7 @@ function text_sanitize(){
 function new_vm_filename(){
 
   # Naming scheme for the new VM spec file: type_alias_(link)(vnics).json
+  #
   # (e.g. os__elasticdb__elastic0eshard0.json, kvm__win__nat0external0__sql0internal0.json)
   # All text will run though text_sanitize(); only characters allowed are regex [a-zA-Z0-9_]
 
@@ -116,102 +117,71 @@ function new_vm_filename(){
 
 
 
-function vm_spec_nics(){
 
-  : '
-  global: interface
-    Name of the interface within the VM ("eth0")
 
-  global: nic_tag
-    nic_tag or interface name that the virtual NIC is attached to
 
-  KVM: model
-    Driver for this NIC (virtio, e1000, rtl8139)
 
-  global: ip
-    IPv4 Address for NIC, or "dhcp"
 
-  global: gateway
-    Gateway for NIC
 
-  global: netmask
-    Netmask for NIC
 
-  global: primary
-    Sets this NICs gateway as the default gw
 
-  global: dhcp_server
-    Allow the VM on this NIC to act as a DHCP Server
 
-  allow_dhcp_spoofing
-  allow_ip_spoofing
-  allow_mac_spoofing
-  allow_restricted_traffic
-  allow_unfiltered_promisc
-  blocked_outgoing_ports
-  '
 
-  if [ $TYPE == kvm ]; then
-  cat >> $TEMP << EOF
-"nics": [{"interface": "$INTERNAL_IF_NAME", "nic_tag": "$NICTAG", "model": "$NICMODEL", "ip": "$IPADDRESS", "gateway": "$GATEWAY", "netmask": "$NETMASK", "primary": $PRIMARY}],
-EOF
-  fi
 
-  if [ ! $TYPE == kvm ]; then
-  cat >> $TEMP << EOF
-"nics": [{"interface": "$INTERNAL_IF_NAME", "nic_tag": "$NICTAG", "ip": "$IPADDRESS", "gateway": "$GATEWAY", "netmask": "$NETMASK", "primary": $PRIMARY}],
-EOF
-  fi
+
+
+
+
+
+
+
+function spec_brand(){
+
 
 }
 
-function vm_spec_resolvers(){
+function spec_alias(){
 
-  : '
-  global: resolvers
-    For OS VMs, this value sets the resolvers which get put into
-    /etc/resolv.conf at VM creation. If maintain_resolvers is set to
-    true, updating this property will also update the resolvers in
-    /etc/resolv.conf. For KVM VMs these will get passed as the resolvers
-    with DHCP responses.
-  '
-
-  if [ -z $@ ]; then
-    cat >> $TEMP << EOF
-"resolvers": ["$DNS_PRIMARY", "$DNS_SECONDARY"],
-EOF
-  fi
 
 }
 
-function vm_spec_quota(){
+function spec_autoboot(){
 
-  : '
-  global: quota
-    This sets a quota on the zone filesystem. For OS VMs, this value is the
-    space actually visible/usable in the guest. For KVM VMs, this value is
-    the quota for the Zone containing the VM, which is not directly
-    available to users.
+  #  global: autoboot
+  #    Boolean indicating that a zone should be booted automatically at
+  #    system boot.  Note that if the zones service is disabled, the zone
+  #    will not autoboot, regardless of the setting of this property. You
+  #    enable the zones service with a svcadm command, such as:
+  #
+  #      svcadm enable svc:/system/zones:default
 
-    Set quota to 0 to disable (ie. for no quota).
-  '
-
-  default=0
 
   cat >> $TEMP << EOF
-"quota": "$DISK_IN_GiB",
+"autoboot": $AUTOBOOT,
 EOF
 
 }
 
-function os_spec_cpucap(){
+function spec_oslx_ram(){
 
-  : '
-  global: cpu_cap
-    Sets a limit on the amount of CPU time that can be used by a VM. The
-    unit used is the percentage of a single CPU that can be used by the VM.
-    Eg. a value of 300 means up to 3 full CPUs.
-  '
+  #  global: max_physical_memory
+  #    The maximum amount of memory on the host that the VM is allowed to use.
+  #    For KVM VMs, this value cannot be lower than ram and should be
+  #    ram + 1024.
+
+  cat >> $TEMP << EOF
+"max_physical_memory": $MAX_MEM_IN_MB,
+EOF
+
+}
+
+function spec_oslx_cpu(){
+
+  #  global: cpu_cap
+  #    Sets a limit on the amount of CPU time that can be used by a VM. The
+  #    unit used is the percentage of a single CPU that can be used by the VM.
+  #    Eg. a value of 300 means up to 3 full CPUs.
+
   default=100
 
   echo "Number of CPUs (a value of 300 means up to 3 full CPUs):"
@@ -232,69 +202,238 @@ EOF
 
 }
 
-function os_spec_max_physical_memory(){
+function spec_oslx_disk(){
 
-  : '
-  global: max_physical_memory
-    The maximum amount of memory on the host that the VM is allowed to use.
-    For KVM VMs, this value cannot be lower than ram and should be
-    ram + 1024.
-  '
+  #  global: quota
+  #    This sets a quota on the zone filesystem. For OS VMs, this value is the
+  #    space actually visible/usable in the guest. For KVM VMs, this value is
+  #    the quota for the Zone containing the VM, which is not directly
+  #    available to users.
+  #
+  #    Set quota to 0 to disable (ie. for no quota).
+
+  # Need to add: spec_delegate_dataset
+
+
+  default=0
+
+
 
   cat >> $TEMP << EOF
-"max_physical_memory": $MAX_MEM_IN_MB,
+"quota": "$DISK_IN_GiB",
 EOF
 
 }
 
-function vm_spec_autoboot(){
+function spec_kvm_ram(){
 
-  : '
-  global: autoboot
-    Boolean indicating that a zone should be booted automatically at
-    system boot.  Note that if the zones service is disabled, the zone
-    will not autoboot, regardless of the setting of this property. You
-    enable the zones service with a svcadm command, such as:
 
-      svcadm enable svc:/system/zones:default
-  '
+}
+
+function spec_kvm_cpu(){
+
+
+}
+
+function spec_kvm_disks(){
+
+
 
   cat >> $TEMP << EOF
-"autoboot": $AUTOBOOT,
+  "disks": [
+    {
+      "boot": true,
+      "model": "virtio",
+      "image_uuid": "e173ecd7-4809-4429-af12-5d11bcc29fd8",
+      "image_name": "ubuntu-10.04.2.7",
+      "image_size": 5120
+      }
+  ],
 EOF
 
 }
 
-function os_spec_image_uuid(){
 
-  cat >> $TEMP << EOF
-"image_uuid": "$IMAGE_IMPORT_UUID",
+function spec_dns(){
+
+  #  global: resolvers
+  #    For OS VMs, this value sets the resolvers which get put into
+  #    /etc/resolv.conf at VM creation. If maintain_resolvers is set to
+  #    true, updating this property will also update the resolvers in
+  #    /etc/resolv.conf. For KVM VMs these will get passed as the resolvers
+  #    with DHCP responses.
+
+  default=(8.8.8.8 8.8.4.4)
+
+echo "Select a DNS"
+select DNS in "8.8.8.8, 8.8.4.4" "Custom"; do
+    case $DNS in
+      "8.8.8.8, 8.8.4.4") DNS_PRIMARY="8.8.8.8"; DNS_SECONDARY="8.8.4.4"; break;;
+      Custom) read -p "Set Primary DNS (8.8.8.8): " DNS_PRIMARY
+      read -p "Set Secondary DNS (8.8.4.4): " DNS_SECONDARY
+
+      if [ -z "$DNS_PRIMARY" ]; then DNS_PRIMARY="${default[0]}"; fi
+      if [ -z "$DNS_SECONDARY" ]; then DNS_SECONDARY="${default[1]}"; fi
+
+    # Input sanitization
+    #      while true; do
+    #      read -p "Set Primary DNS: " DNS_PRIMARY
+    #      read -p "Set Secondary DNS: " DNS_SECONDARY
+    #
+    #      echo "$DNS_PRIMARY" | grep -E "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
+    #      echo "$DNS_SECONDARY" | grep -E "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
+    #
+    #      break
+    #      done
+      break
+      ;;
+    esac
+done
+
+echo "[*] DNS: $DNS_PRIMARY, $DNS_SECONDARY"
+
+  if [ -z $@ ]; then
+    cat >> $TEMP << EOF
+  "resolvers": [
+    "$DNS_PRIMARY",
+    "$DNS_SECONDARY"
+  ],
 EOF
+  fi
 
 }
 
-function lx_spec_image_uuid(){
+function spec_nics(){
 
+  #  global: interface
+  #    Name of the interface within the VM ("eth0")
+  #
+  #  global: nic_tag
+  #    nic_tag or interface name that the virtual NIC is attached to
+  #
+  #  KVM: model
+  #    Driver for this NIC (virtio, e1000, rtl8139)
+  #
+  #  global: ip
+  #    IPv4 Address for NIC, or "dhcp"
+  #
+  #  global: gateway
+  #    Gateway for NIC
+  #
+  #  global: netmask
+  #    Netmask for NIC
+  #
+  #  global: primary
+  #    Sets this NICs gateway as the default gw
+  #
+  #  global: dhcp_server
+  #    Allow the VM on this NIC to act as a DHCP Server
+  #
+  #  allow_dhcp_spoofing
+  #  allow_ip_spoofing
+  #  allow_mac_spoofing
+  #  allow_restricted_traffic
+  #  allow_unfiltered_promisc
+  #  blocked_outgoing_ports
+
+
+
+  if [ $TYPE == os ]; then
   cat >> $TEMP << EOF
-"image_uuid": "$IMAGE_IMPORT_UUID",
+  "nics": [
+    {
+      "interface": "$INTERFACE",
+      "nic_tag": "$NICTAG",
+      "ip": "$IPADDRESS",
+      "gateway": "$GATEWAY",
+      "netmask": "$NETMASK",
+      "primary": true
+    }
+  ],
 EOF
+  fi
+
+  if [ $TYPE == lx ]; then
+  cat >> $TEMP << EOF
+  "nics": [
+    {
+      "interface": "$INTERFACE",
+      "nic_tag": "$NICTAG",
+      "ip": "$IPADDRESS",
+      "gateway": "$GATEWAY",
+      "netmask": "$NETMASK",
+      "primary": true
+    }
+  ],
+EOF
+  fi
+
+  if [ ! $TYPE == kvm ]; then
+  cat >> $TEMP << EOF
+  "nics": [
+    {
+      "interface": "$INTERFACE",
+      "nic_tag": "$NICTAG",
+      "model": "virtio, e1000, rtl8139",
+      "ip": "$IPADDRESS",
+      "gateway": "$GATEWAY",
+      "netmask": "$NETMASK",
+      "primary": true
+    }
+  ],
+EOF
+  fi
 
 }
 
-function os_spec(){
 
+
+
+
+
+
+
+
+function os(){
+
+  spec_brand
+  spec_alias
+  spec_autoboot
+  spec_oslx_ram
+  spec_oslx_cpu
+  spec_oslx_disk
+  return $?
 
 }
 
-function lx_spec(){
+function lx(){
 
+  spec_brand
+  spec_alias
+  spec_autoboot
+  spec_oslx_ram
+  spec_oslx_cpu
+  spec_oslx_disk
+  return $?
 
 }
 
-function kvm_spec(){
+function kvm(){
 
+  spec_brand
+  spec_alias
+  spec_autoboot
+  spec_kvm_ram
+  spec_kvm_cpu
+  spec_kvm_disks
+  return $?
 
 }
+
+
+
+
+
 
 function vmadm_validate(){
 
