@@ -337,6 +337,72 @@ function spec_nics(){
   #  blocked_outgoing_ports
 
 
+  INTERFACE=eth0
+  NICTAG=external
+  IPADDRESS=unset
+  GATEWAY=unset
+  NETMASK=unset
+  PRIMARY=unset
+
+  read -p "Set VM internal NIC name (eth0): " INTERFACE
+  if [ -z "$INTERFACE" ]; then INTERFACE=eth0; fi
+
+  nictagadm list
+  echo ""
+  read -p "Set NIC Tag (external): " NICTAG
+  if [ -z "$NICTAG" ]; then NICTAG=external; fi
+
+  while true; do
+
+    echo ""
+    echo "== Current settings =="
+    echo ">> Interface:" "$INTERFACE"
+    echo ">> NIC Tag:" "$NICTAG"
+    echo ">> IPv4:" "$IPADDRESS"
+    echo ">> Gateway:" "$GATEWAY"
+    echo ">> Netmask:" "$NETMASK"
+    echo ">> Primary:" "$PRIMARY"
+    echo ""
+    
+    select ANSWER in "DHCP" "Static"; do
+      case $ANSWER in
+        "DHCP")
+          IPADDRESS=dhcp
+          GATEWAY=dhcp
+          NETMASK=dhcp
+          break
+        ;;
+        "Static")
+          read -p "IPv4: " IPADDRESS
+          if [ -z "$IPADDRESS" ]; then echo Try again; break; fi
+
+          read -p "Gateway: " GATEWAY
+          if [ -z "$GATEWAY" ]; then echo Try again; break; fi
+
+          read -p "Netmask (255.255.255.0): " NETMASK
+          if [ -z "$NETMASK" ]; then NETMASK="255.255.255.0"; fi
+
+          FINISHED=true
+          break
+        ;;
+      esac
+    done
+    
+    echo "Set NIC as default gw?"
+    select ANSWER in "Yes" "No"; do
+      case $ANSWER in
+        "Yes") PRIMARY=true; break ;;
+        "No") PRIMARY=false; break ;;
+      esac
+    done
+
+  if [ "$FINISHED" == true ]; then break; fi
+  done
+
+
+
+
+
 
   if [ $TYPE == os ]; then
   cat >> $TEMP << EOF
@@ -568,8 +634,8 @@ EOF
 pre_check
 
 echo "How would you like to create your VM today?"
-select TYPE in "Just the simple essentials!" "I want to see all the options!"; do
-    case $TYPE in
+select ANSWER in "Just the simple essentials!" "I want to see all the options!"; do
+    case $ANSWER in
         "Just the simple essentials!") _EasyTiger EASY
         # Choose VM type
         # Choose DHCP or Static, nic tag
