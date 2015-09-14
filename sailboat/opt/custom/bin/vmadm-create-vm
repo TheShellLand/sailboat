@@ -344,26 +344,24 @@ function spec_nics(){
   NETMASK=unset
   PRIMARY=unset
 
-  read -p "Set VM internal NIC name (eth0): " INTERFACE
-  if [ -z "$INTERFACE" ]; then INTERFACE=eth0; fi
-
-  nictagadm list
-  echo ""
-  read -p "Set NIC Tag (external): " NICTAG
-  if [ -z "$NICTAG" ]; then NICTAG=external; fi
 
   while true; do
+    read -p "Set VM internal NIC name (eth0): " INTERFACE
+    if [ -z "$INTERFACE" ]; then INTERFACE="eth0"; fi
 
+    nictagadm list
     echo ""
-    echo "== Current settings =="
-    echo ">> Interface:" "$INTERFACE"
-    echo ">> NIC Tag:" "$NICTAG"
-    echo ">> IPv4:" "$IPADDRESS"
-    echo ">> Gateway:" "$GATEWAY"
-    echo ">> Netmask:" "$NETMASK"
-    echo ">> Primary:" "$PRIMARY"
-    echo ""
-    
+    read -p "Set NIC Tag (external): " NICTAG
+    if [ -z "$NICTAG" ]; then NICTAG="external"; fi
+
+    echo "Set NIC as default gw?"
+    select ANSWER in "Yes" "No"; do
+      case $ANSWER in
+        "Yes") PRIMARY=true; break ;;
+        "No") PRIMARY=false; break ;;
+      esac
+    done
+
     select ANSWER in "DHCP" "Static"; do
       case $ANSWER in
         "DHCP")
@@ -382,17 +380,25 @@ function spec_nics(){
           read -p "Netmask (255.255.255.0): " NETMASK
           if [ -z "$NETMASK" ]; then NETMASK="255.255.255.0"; fi
 
-          FINISHED=true
           break
         ;;
       esac
     done
-    
-    echo "Set NIC as default gw?"
-    select ANSWER in "Yes" "No"; do
+
+    echo ""
+    echo "== Current settings =="
+    echo ">> Interface:" "$INTERFACE"
+    echo ">> NIC Tag:" "$NICTAG"
+    echo ">> IPv4:" "$IPADDRESS"
+    echo ">> Gateway:" "$GATEWAY"
+    echo ">> Netmask:" "$NETMASK"
+    echo ">> Primary NIC:" "$PRIMARY"
+    echo ""
+    echo "Confirm?"
+    select ANSWER in "Done" "There's something wrong"; do
       case $ANSWER in
-        "Yes") PRIMARY=true; break ;;
-        "No") PRIMARY=false; break ;;
+        "Done") FINISHED="true"; break;;
+        "There's something wrong") FINISHED="false"; break;;
       esac
     done
 
