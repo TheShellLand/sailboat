@@ -355,16 +355,16 @@ function spec_nics(){
     if [ -z "$NICTAG" ]; then NICTAG="external"; fi
 
     echo "Set NIC as default gw?"
-    select ANSWER in "Yes" "No"; do
+    select ANSWER in "Yes (default)" "No"; do
       case $ANSWER in
-        "Yes") PRIMARY=true; break ;;
+        "Yes (default)") PRIMARY=true; break ;;
         "No") PRIMARY=false; break ;;
       esac
     done
 
-    select ANSWER in "DHCP" "Static"; do
+    select ANSWER in "DHCP (default)" "Static"; do
       case $ANSWER in
-        "DHCP")
+        "DHCP (default)")
           IPADDRESS=dhcp
           GATEWAY=dhcp
           NETMASK=dhcp
@@ -384,6 +384,17 @@ function spec_nics(){
         ;;
       esac
     done
+
+    if [ "$TYPE" == kvm ]; then
+      echo "Choose NIC Model: (virtio: best performance, but needs drivers; e1000 & rtl8139: more universal) "
+      select ANSWER in "virtio (default)" "e1000" "rtl8139"; do
+        case $ANSWER in
+          "virtio (default)") NICMODEL="virtio"; break;;
+          e1000) NICMODEL="e1000"; break;;
+          rtl8139) NICMODEL="rtl8139"; break;;
+        esac
+      done
+    fi
 
     echo ""
     echo "== Current settings =="
@@ -407,9 +418,6 @@ function spec_nics(){
 
 
 
-
-
-
   if [ $TYPE == os ]; then
   cat >> $TEMP << EOF
   "nics": [
@@ -419,7 +427,7 @@ function spec_nics(){
       "ip": "$IPADDRESS",
       "gateway": "$GATEWAY",
       "netmask": "$NETMASK",
-      "primary": true
+      "primary": $PRIMARY
     }
   ],
 EOF
@@ -434,7 +442,7 @@ EOF
       "ip": "$IPADDRESS",
       "gateway": "$GATEWAY",
       "netmask": "$NETMASK",
-      "primary": true
+      "primary": $PRIMARY
     }
   ],
 EOF
@@ -446,19 +454,26 @@ EOF
     {
       "interface": "$INTERFACE",
       "nic_tag": "$NICTAG",
-      "model": "virtio, e1000, rtl8139",
+      "model": "$NICMODEL",
       "ip": "$IPADDRESS",
       "gateway": "$GATEWAY",
       "netmask": "$NETMASK",
-      "primary": true
+      "primary": $PRIMARY
     }
   ],
 EOF
   fi
 
+  echo "Add another NIC?"
+  select ANSWER in "Yes" "No (default)"; do
+    case $ANSWER in
+      "Yes") spec_nics; break;;
+      "No (default)") break;;
+    esac
+  done
+  return $?
+
 }
-
-
 
 
 
