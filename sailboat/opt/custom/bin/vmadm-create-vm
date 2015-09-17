@@ -300,11 +300,9 @@ function spec_kvm_disk(){
       Custom) read -p "Enter disk size (in MB): " DISK_SIZE; break;;
     esac
   done
-  # Set zfs quota automatically from disk size
-  QUOTA=$(($DISK_SIZE / 1024))
+    # Set zfs quota automatically from disk size
+    QUOTA=$(($DISK_SIZE / 1024))
   fi
-
-
 
   if [ "$KVM_DISK_TYPE" == image ]; then
   echo "Set disk usage by image (in MB)"
@@ -317,10 +315,9 @@ function spec_kvm_disk(){
       Custom) read -p "Enter disk size (in MB): " IMAGE_SIZE; break;;
     esac
   done
-  # Set zfs quota automatically from disk size
-  QUOTA=$(($IMAGE_SIZE / 1024))
+    # Set zfs quota automatically from disk size
+    QUOTA=$(($IMAGE_SIZE / 1024))
   fi
-
 
 
 
@@ -347,8 +344,8 @@ EOF
       "compression": "$COMPRESSION",
       "image_uuid": "$IMAGE_UUID",
       "image_name": "$IMAGE_NAME",
-      "image_size": 5120,
-      "quota": "number in GiB",
+      "image_size": $IMAGE_SIZE,
+      "quota": "$QUOTA",
       }
   ],
 EOF
@@ -668,8 +665,21 @@ function create_vm_lx(){
   # Create LX VM
   vmadm create << EOF
 {
-  "nics": [{"interface": "$INTERNAL_IF_NAME", "nic_tag": "$NICTAG", "model": "$VIRTIO_E1000_RTL8139", "ip": "$IPADDRESS", "gateway": "$GATEWAY", "netmask": "$NETMASK", "primary": $PRIMARY}],
-  "resolvers": ["$DNS_PRIMARY", "$DNS_SECONDARY"],
+  "nics": [
+    {
+      "interface": "$INTERNAL_IF_NAME",
+      "nic_tag": "$NICTAG",
+      "model": "$VIRTIO_E1000_RTL8139",
+      "ip": "$IPADDRESS",
+      "gateway": "$GATEWAY",
+      "netmask": "$NETMASK",
+      "primary": $PRIMARY
+    }
+  ],
+  "resolvers": [
+    "$DNS_PRIMARY",
+    "$DNS_SECONDARY"
+  ],
   "image_uuid": "$IMAGE_IMPORT_UUID",
   "quota": "$DISK_IN_GiB",
   "cpu_cap": $CPU_CAP,
@@ -689,10 +699,7 @@ function create_vm_kvm(){
 
   # Create KVM VM
   vmadm create << EOF
-{
 
-
-}
 EOF
   return $?
 
@@ -704,9 +711,29 @@ function create_vm_iso(){
   # Create ISO VM
   vmadm create << EOF
 {
-  "nics": [{"interface": "$INTERFACE", "nic_tag": "$NICTAG", "model": "$VIRTIO_E1000_RTL8139", "ip": "$IPADDRESS", "gateway": "$GATEWAY", "netmask": "$NETMASK", "primary": true}],
-  "resolvers": ["$DNS_PRIMARY", "$DNS_SECONDARY"],
-  "disks": [{"boot": $BOOTABLE,"model": "$DISK_MODEL","size": $DISK_IN_MB,"compression": "$COMPRESSION"}],
+  "nics": [
+    {
+      "interface": "$INTERFACE",
+      "nic_tag": "$NICTAG",
+      "model": "$VIRTIO_E1000_RTL8139",
+      "ip": "$IPADDRESS",
+      "gateway": "$GATEWAY",
+      "netmask": "$NETMASK",
+      "primary": true
+    }
+  ],
+  "resolvers": [
+    "$DNS_PRIMARY",
+    "$DNS_SECONDARY"
+  ],
+  "disks": [
+    {
+      "boot": $BOOTABLE,
+      "model": "$DISK_MODEL",
+      "size": $DISK_IN_MB,
+      "compression": "$COMPRESSION"
+    }
+  ],
   "vcpus": "$VCPU",
   "ram": $RAM_IN_MB,
   "autoboot": $AUTO_BOOT,
@@ -727,7 +754,10 @@ function create_vm_spec_kvm_image_import(){
   vmadm create << EOF
 {
   "brand": "kvm",
-  "resolvers": ["$DNS_PRIMARY","$DNS_SECONDARY"],
+  "resolvers": [
+    "$DNS_PRIMARY",
+    "$DNS_SECONDARY"
+  ],
   "ram": "$RAM",
   "max_locked_memory": "$RAM_MAX",
   "vcpus": "$VCPU",
