@@ -24,13 +24,13 @@ case "$1" in
     'start')
 	#### Insert code to execute on startup here.
 
-	echo "[*] $Script : Adding SSH key to root";
+	#[*] $Script : Adding SSH key to root
 
 	if [ ! -d "$SSH" ];
-	then echo "[*] $Script : Creating directory";
+	then # [*] $Script : Creating directory
 	     mkdir $SSH && echo "[OK]" || exit $SMF_EXIT_ERR_FATAL; fi;
 
-	echo "[*] $Script : Adding public keys";
+	# [*] $Script : Adding public keys
 	for key in `ls $KeyImport/*.pub`; do cat "$key" >> $AuthorizedKeys && echo "" >> $AuthorizedKeys && sed -i '' '/^$/d' $AuthorizedKeys; done;
 	;;
     
