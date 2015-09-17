@@ -256,7 +256,12 @@ function spec_kvm_ram(){
       4096) RAM_IN_MB=4096; break;;
       5120) RAM_IN_MB=5120; break;;
       6144) RAM_IN_MB=6144; break;;
-      Custom) read -p "Custom RAM: " RAM_IN_MB; break;;
+      Custom)
+      while true; do
+        read -p "Custom RAM: " RAM_IN_MB
+        if [ -z "$RAM_IN_MB" ]; then break; else echo "Needs a number!"; fi
+      done
+      break;;
     esac
   done
   cat >> $TEMP << EOF
