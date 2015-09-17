@@ -179,7 +179,7 @@ function spec_oslx_ram(){
   #    ram + 1024.
 
   cat >> $TEMP << EOF
-"max_physical_memory": $MAX_MEM_IN_MB,
+  "max_physical_memory": $MAX_MEM_IN_MB,
 EOF
 
 }
@@ -239,10 +239,30 @@ EOF
 
 function spec_kvm_ram(){
 
+  #  KVM: ram
+  #    For KVM VMs this is the amount of virtual RAM that will be available to
+  #    the guest kernel. For OS VMs this will be the same as the property
+  #    max_physical_memory.
+
+  default=256
+
+  echo "Select amount of RAM (in MB)"
+  select RAM_IN_MB in "256" "512" "1024" "2048" "4096" "5120" "6144" "Custom"; do
+    case $RAM_IN_MB in
+      256) RAM_IN_MB=256; break;;
+      512) RAM_IN_MB=512; break;;
+      1024) RAM_IN_MB=1024; break;;
+      2048) RAM_IN_MB=2048; break;;
+      4096) RAM_IN_MB=4096; break;;
+      5120) RAM_IN_MB=5120; break;;
+      6144) RAM_IN_MB=6144; break;;
+      Custom) read -p "Custom RAM: " RAM_IN_MB; break;;
+    esac
+  done
   cat >> $TEMP << EOF
   "ram": $RAM_IN_MB,
 EOF
-
+  return $?
 }
 
 function spec_kvm_cpu(){
@@ -259,16 +279,21 @@ function spec_kvm_cpu(){
       3) VCPU=3; break;;
       4) VCPU=4; break;;
       Custom) echo "[*] Be sure not to use more cores than are available "
-      read -p "" VCPU; break;;
+      read -p "Custom VCPUS: " VCPU; break;;
     esac
   done
   cat >> $TEMP << EOF
   "vcpus": "$VCPU",
 EOF
+  return $?
 
 }
 
 function spec_kvm_disk(){
+
+  #  KVM: disks.*.<property>
+  #    When creating a KVM VM or getting a KVM VM's JSON, you will use this
+  #    property. This is an array of 'disk' objects.
 
   select KVM_DISK_TYPE in "Blank: New empty disk" "Image: Disk from an image"; do
     case $KVM_DISK_TYPE in
@@ -277,12 +302,11 @@ function spec_kvm_disk(){
     esac
   done
 
-
   echo "Will this be the boot disk?"
   select BOOTABLE in "Yes" "No"; do
     case $BOOTABLE in
-      Yes)BOOTABLE=true; break;;
-      No)BOOTABLE=false; break;;
+      Yes) BOOTABLE=true; break;;
+      No) BOOTABLE=false; break;;
     esac
   done
   
