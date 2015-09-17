@@ -191,6 +191,9 @@ function spec_oslx_cpu(){
   #    unit used is the percentage of a single CPU that can be used by the VM.
   #    Eg. a value of 300 means up to 3 full CPUs.
 
+  # OS VMs see all of the real CPUs, not some subset of them.
+  # But scheduling reduces them to some set of their caps and shares.
+
   default=100
 
   echo "Number of CPUs (a value of 300 means up to 3 full CPUs):"
@@ -244,6 +247,21 @@ EOF
 
 function spec_kvm_cpu(){
 
+  # KVM: vcpus
+  #   KVM instances that says how many VCPUs they can see
+  #   Which is independent of how much CPU the zone can actually use
+
+  echo "Select number of CPUs"
+  select VCPU in "1" "2" "3" "4" "Custom"; do
+    case $VCPU in
+      1) VCPU=1; break;;
+      2) VCPU=2; break;;
+      3) VCPU=3; break;;
+      4) VCPU=4; break;;
+      Custom) echo "[*] Be sure not to use more cores than are available "
+      read -p "" VCPU; break;;
+    esac
+  done
   cat >> $TEMP << EOF
   "vcpus": "$VCPU",
 EOF
