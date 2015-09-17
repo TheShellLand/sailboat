@@ -17,6 +17,8 @@
   "disks": [
     {
       "image_uuid": "$IMAGE_UUID",
+      "image_name": "$IMAGE_NAME",
+      "image_size": $IMAGE_SIZE,
       "model": "virtio | ide | scsi",
       "compression": "on,off,lzjb,gzip,gzip-N,zle",
       "boot": true

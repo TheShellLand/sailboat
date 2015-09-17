@@ -1,10 +1,34 @@
 {
-  "nics": [{"interface": "$INTERFACE", "nic_tag": "$NICTAG", "model": "virtio, e1000, rtl8139", "ip": "$IPADDRESS", "gateway": "$GATEWAY", "netmask": "$NETMASK", "primary": true}],
-  "resolvers": ["$DNS_PRIMARY", "$DNS_SECONDARY"],
-  "disks": [{"boot": true, "model": "virtio | ide | scsi", "size": 40960, "compression": "on,off,lzjb,gzip,gzip-N,zle"}],
+  "nics": [
+    {
+      "interface": "$INTERFACE",
+      "nic_tag": "$NICTAG",
+      "model": "virtio, e1000, rtl8139",
+      "ip": "$IPADDRESS",
+      "gateway": "$GATEWAY",
+      "netmask": "$NETMASK",
+      "primary": true
+    }
+  ],
+  "resolvers": [
+    "$DNS_PRIMARY",
+    "$DNS_SECONDARY"
+  ],
+  "disks": [
+    {
+      "boot": true,
+      "model": "virtio | ide | scsi",
+      "size": 40960,
+      "compression": "on,off,lzjb,gzip,gzip-N,zle"
+    }
+  ],
   "vcpus": "number of VCPU",
-  "ram": number in MB,
-  "autoboot": true|false,
+  "ram": number
+  in
+  MB,
+  "autoboot": true
+  |
+  false,
   "alias": "string",
   "brand": "kvm"
 }
