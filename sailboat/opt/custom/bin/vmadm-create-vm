@@ -25,7 +25,7 @@ function _EasyTiger(){
 function pre_check(){
 
   # Location for new VM specs
-  SPECS_DIR="/opt/custom/json/new_vm_specs"
+  SPECS_DIR="/opt/custom/json/SAVED_CUSTOM_VM"
   export SPECS_DIR
   echo "[*] New specs located in: $SPECS_DIR"
   if [ ! -d "$SPECS_DIR" ]; then mkdir -p "$SPECS_DIR"; fi
@@ -137,11 +137,19 @@ function new_vm_filename(){
 
 function spec_brand(){
 
+  cat >> $TEMP << EOF
+  "brand": "kvm"
+EOF
+  return $?
 
 }
 
 function spec_alias(){
 
+  cat >> $TEMP << EOF
+  "alias": "$ALIAS",
+EOF
+  return $?
 
 }
 
@@ -157,8 +165,9 @@ function spec_autoboot(){
 
 
   cat >> $TEMP << EOF
-"autoboot": $AUTOBOOT,
+  "autoboot": $AUTOBOOT,
 EOF
+  return $?
 
 }
 
@@ -220,36 +229,139 @@ function spec_oslx_disk(){
 
 
   cat >> $TEMP << EOF
-"quota": "$DISK_IN_GiB",
+  "quota": "$DISK_IN_GiB",
 EOF
 
 }
 
 function spec_kvm_ram(){
 
+  cat >> $TEMP << EOF
+  "ram": $RAM_IN_MB,
+EOF
 
 }
 
 function spec_kvm_cpu(){
 
+  cat >> $TEMP << EOF
+  "vcpus": "$VCPU",
+EOF
 
 }
 
-function spec_kvm_disks(){
+function spec_kvm_disk(){
+
+  select KVM_DISK_TYPE in "Blank: New empty disk" "Image: Disk from an image"; do
+    case $KVM_DISK_TYPE in
+    "Blank: New empty disk") KVM_DISK_TYPE=blank; break;;
+    "Image: Disk from an image") KVM_DISK_TYPE=image; break;;
+    esac
+  done
+
+
+  echo "Will this be the boot disk?"
+  select BOOTABLE in "Yes" "No"; do
+    case $BOOTABLE in
+      Yes)BOOTABLE=true; break;;
+      No)BOOTABLE=false; break;;
+    esac
+  done
+  
+  echo "Select disk model"
+  select DISK_MODEL in "virtio (default)" "ide" "scsi"; do
+    case $DISK_MODEL in
+      "virtio (default)") DISK_MODEL=virtio; break;;
+      ide) DISK_MODEL=ide; break;;
+      scsi) DISK_MODEL=scsi; break;;
+    esac
+  done
+  
+  echo "Select compression"
+  select COMPRESSION in "on (default)" "off" "lzjb" "gzip" "gzip-N" "zle"; do
+    case $COMPRESSION in
+      "on (default)") COMPRESSION=on; break;;
+      off) COMPRESSION=off; break;;
+      lzjb) COMPRESSION=lzjb; break;;
+      gzip) COMPRESSION=gzip; break;;
+      gzip-N) COMPRESSION="gzip-N"; break;;
+      zle) COMPRESSION=zle; break;;
+    esac
+  done  
+
+  if [ "$KVM_DISK_TYPE" == blank ]; then
+  echo "Disk size (in MB)"
+  select DISK_SIZE in "40960 (default)" "30720" "20480" "10240" "Custom"; do
+    case $DISK_SIZE in
+      "40960 (default)") DISK_SIZE=40960; break;;
+      30720) DISK_SIZE=30720; break;;
+      20480) DISK_SIZE=20480; break;;
+      10240) DISK_SIZE=10240; break;;
+      Custom) read -p "Enter disk size (in MB): " DISK_SIZE; break;;
+    esac
+  done
+  # Set zfs quota automatically from disk size
+  QUOTA=$(($DISK_SIZE / 1024))
+  fi
 
 
 
-  cat >> $TEMP << EOF
+  if [ "$KVM_DISK_TYPE" == image ]; then
+  echo "Set disk usage by image (in MB)"
+  select IMAGE_SIZE in "40960 (default)" "30720" "20480" "10240" "Custom"; do
+    case $IMAGE_SIZE in
+      "40960 (default)") IMAGE_SIZE=40960; break;;
+      30720) IMAGE_SIZE=30720; break;;
+      20480) IMAGE_SIZE=20480; break;;
+      10240) IMAGE_SIZE=10240; break;;
+      Custom) read -p "Enter disk size (in MB): " IMAGE_SIZE; break;;
+    esac
+  done
+  # Set zfs quota automatically from disk size
+  QUOTA=$(($IMAGE_SIZE / 1024))
+  fi
+
+
+
+
+  if [ "$KVM_DISK_TYPE" == blank ]; then
+    cat >> $TEMP << EOF
   "disks": [
     {
-      "boot": true,
-      "model": "virtio",
-      "image_uuid": "e173ecd7-4809-4429-af12-5d11bcc29fd8",
-      "image_name": "ubuntu-10.04.2.7",
-      "image_size": 5120
+      "boot": $BOOTABLE,
+      "model": "$DISK_MODEL",
+      "compression": "$COMPRESSION",
+      "size": $DISK_SIZE,
+      "quota": "$QUOTA"
       }
   ],
 EOF
+  fi
+
+  if [ "$KVM_DISK_TYPE" == image ]; then
+    cat >> $TEMP << EOF
+  "disks": [
+    {
+      "boot": $BOOTABLE,
+      "model": "$DISK_MODEL",
+      "compression": "$COMPRESSION",
+      "image_uuid": "$IMAGE_UUID",
+      "image_name": "$IMAGE_NAME",
+      "image_size": 5120,
+      "quota": "number in GiB",
+      }
+  ],
+EOF
+  fi
+
+  echo "Add another Disk?"
+  select ANSWER in "Yes" "No (default)"; do
+    case $ANSWER in
+      "Yes") spec_kvm_disk; break;;
+      "No (default)") break;;
+    esac
+  done
+  return $?
 
 }
 
@@ -285,21 +397,18 @@ select DNS in "8.8.8.8, 8.8.4.4" "Custom"; do
     #
     #      break
     #      done
-      break
-      ;;
+      break;;
     esac
 done
 
 echo "[*] DNS: $DNS_PRIMARY, $DNS_SECONDARY"
 
-  if [ -z $@ ]; then
-    cat >> $TEMP << EOF
+  cat >> $TEMP << EOF
   "resolvers": [
     "$DNS_PRIMARY",
     "$DNS_SECONDARY"
   ],
 EOF
-  fi
 
 }
 
@@ -581,14 +690,8 @@ function create_vm_kvm(){
   # Create KVM VM
   vmadm create << EOF
 {
-  "nics": [{"interface": "$INTERFACE", "nic_tag": "$NICTAG", "model": "$VIRTIO_E1000_RTL8139", "ip": "$IPADDRESS", "gateway": "$GATEWAY", "netmask": "$NETMASK", "primary": true}],
-  "resolvers": ["$DNS_PRIMARY", "$DNS_SECONDARY"],
-  "disks": [{"image_uuid": "$IMAGE_UUID", "boot": $BOOTABLE, "model": "$DISK_MODEL", "compression": "$COMPRESSION"}],
-  "vcpus": "$VCPU",
-  "ram": $RAM_IN_MB,
-  "autoboot": $AUTO_BOOT,
-  "alias": "$ALIAS",
-  "brand": "kvm"
+
+
 }
 EOF
   return $?
