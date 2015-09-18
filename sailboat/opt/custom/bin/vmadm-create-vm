@@ -51,8 +51,8 @@ function choose_vm_type(){
 
   # LX, OS, or KVM
   echo "Select a VM type"
-  select type in "OS - Native, allows RAM over provisioning" "LX - Native, runs linux flavors, yum" "KVM - Linux image" "ISO - Windows, Linux, Mac, any ISO"; do
-    case option in
+  select BRAND in "OS - Native, allows RAM over provisioning" "LX - Native, runs linux flavors, yum" "KVM - Linux image" "ISO - Windows, Linux, Mac, any ISO"; do
+    case $BRAND in
       "OS - Native, allows RAM over provisioning") create_vm os ; return $? ;;
       "LX - Native, runs linux flavors, yum") create_vm lx; return $? ;;
       "KVM - Linux image") create_vm kvm; return $? ;;
@@ -66,13 +66,13 @@ function choose_vm_type(){
 
 function create_vm(){
 
-  TYPE="$1"
-  export TYPE
+  BRAND="$1"
+  export BRAND
 
-  if [ "$TYPE" == "os" ]; then create_vm_os; return $?; fi
-  if [ "$TYPE" == "lx" ]; then create_vm_lx; return $?; fi
-  if [ "$TYPE" == "iso" ]; then create_vm_iso; return $?; fi
-  if [ "$TYPE" == "kvm" ]; then create_vm_kvm; return $?; fi
+  if [ "$BRAND" == "os" ]; then create_vm_os; return $?; fi
+  if [ "$BRAND" == "lx" ]; then create_vm_lx; return $?; fi
+  if [ "$BRAND" == "iso" ]; then create_vm_iso; return $?; fi
+  if [ "$BRAND" == "kvm" ]; then create_vm_kvm; return $?; fi
   return $?
 
 }
@@ -95,7 +95,7 @@ function text_sanitize(){
 
 function new_vm_filename(){
 
-  # Naming scheme for the new VM spec file: type_alias_(link)(vnics).json
+  # Naming scheme for the new VM spec file: $BRAND_$ALIAS_(link)(vnics).json
   #
   # (e.g. os__elasticdb__elastic0eshard0.json, kvm__win__nat0external0__sql0internal0.json)
   # All text will run though text_sanitize(); only characters allowed are regex [a-zA-Z0-9_]
@@ -137,8 +137,13 @@ function new_vm_filename(){
 
 function spec_brand(){
 
+  #  global: brand
+  #    This will be one of 'joyent' or 'joyent-minimal' for OS virtualization
+  #    and 'kvm' for full hardware virtualization. This is a required value
+  #    for VM creation.
+         
   cat >> $TEMP << EOF
-  "brand": "kvm"
+  "brand": "$BRAND",
 EOF
   return $?
 
@@ -146,12 +151,36 @@ EOF
 
 function spec_alias(){
 
+  #  global: alias
+  #    An alias for a VM which is for display/lookup purposes only. Not
+  #    required to be unique.
+
+  default=$(date +%s)
+
+  read -p "Set VM name (epoch: $default): " ALIAS
+  if [ -z "$ALIAS" ]; then ALIAS=created-$default; fi
   cat >> $TEMP << EOF
   "alias": "$ALIAS",
 EOF
   return $?
 
 }
+
+function spec_hostname(){
+
+  #  global: hostname
+  #    For KVM VMs, this value will be handed out via DHCP as the hostname for
+  #    the VM. For OS VMs, this value will get set in several files at
+  #    creation time, but changing it later will do nothing.
+
+  read -p "" HOSTNAME
+  cat >> $TEMP << EOF
+  "hostname": "$HOSTNAME",
+EOF
+  return $?
+
+}
+
 
 function spec_autoboot(){
 
@@ -163,7 +192,15 @@ function spec_autoboot(){
   #
   #      svcadm enable svc:/system/zones:default
 
+  default=false
 
+  echo "Autoboot if SmartOS reboots? (This will crash the server if it runs out of resources!!)"
+  select AUTOBOOT in "Yes" "No"; do
+    case $AUTOBOOT in
+      Yes) AUTOBOOT=true; break;;
+      No) AUTOBOOT=false; break;;
+    esac
+  done
   cat >> $TEMP << EOF
   "autoboot": $AUTOBOOT,
 EOF
@@ -178,9 +215,28 @@ function spec_oslx_ram(){
   #    For KVM VMs, this value cannot be lower than ram and should be
   #    ram + 1024.
 
+  default=128
+
+  echo ::memstat | mdb -k
+  echo ""
+  echo "Select max RAM usage (in MB)"
+  select RAM_MAX in "128" "256" "512" "1024" "2048" "4096" "Custom"; do
+    case $RAM_MAX in
+      128) RAM_MAX=128; break;;
+      256) RAM_MAX=256; break;;
+      512) RAM_MAX=512; break;;
+      1024) RAM_MAX=1024; break;;
+      2048) RAM_MAX=2048; break;;
+      4096) RAM_MAX=4096; break;;
+      Custom) read -p "Custom max RAM usage: " RAM_MAX
+      if [ -z "$RAM_MAX" ]; then RAM_MAX="$default"; fi
+      break;;
+    esac
+  done
   cat >> $TEMP << EOF
-  "max_physical_memory": $MAX_MEM_IN_MB,
+  "max_physical_memory": $RAM_MAX,
 EOF
+  return $?
 
 }
 
@@ -196,19 +252,20 @@ function spec_oslx_cpu(){
 
   default=100
 
-  echo "Number of CPUs (a value of 300 means up to 3 full CPUs):"
-  select CPU_CAP in "100" "200" "300" "400" "Custom"; do
+  echo "Select number of CPUs (a value of 300 means up to 3 full CPUs):"
+  select CPU_CAP in "100 (default)" "200" "300" "400" "Custom"; do
     case $CPU_CAP in
-      100) CPU_CAP=100; break;;
+      "100 (default)") CPU_CAP=100; break;;
       200) CPU_CAP=200; break;;
       300) CPU_CAP=300; break;;
       400) CPU_CAP=400; break;;
-      Custom) read -p "Set custom CPU value: " CPU_CAP; break;;
+      Custom) read -p "Custom CPU value (100): " CPU_CAP
+      if [ -z "$CPU_CAP" ]; then CPU_CAP="$default"; fi
+      break;;
     esac
   done
-  echo "[*] cpu_cap: $CPU_CAP"
   cat >> $TEMP << EOF
-"cpu_cap": $CPU_CAP,
+  "cpu_cap": $CPU_CAP,
 EOF
   return $?
 
@@ -226,14 +283,27 @@ function spec_oslx_disk(){
 
   # Need to add: spec_delegate_dataset
 
+  default=5
 
-  default=0
-
-
-
+  echo "Select disk size (in GB)"
+  select QUOTA in "5 (default)" "10" "15" "20" "25" "30" "40" "Custom"; do
+    case $QUOTA in
+      "5 (default)") QUOTA=5; break;;
+      10) QUOTA=10; break;;
+      15) QUOTA=15; break;;
+      20) QUOTA=20; break;;
+      25) QUOTA=25; break;;
+      30) QUOTA=30; break;;
+      40) QUOTA=40; break;;
+      Custom) read -p "Custom disk size (in GB) (5): " QUOTA
+      if [ -z "$QUOTA" ]; then QUOTA="$default"; fi
+      break;;
+    esac
+  done
   cat >> $TEMP << EOF
-  "quota": "$DISK_IN_GiB",
+  "quota": "$QUOTA",
 EOF
+  return $?
 
 }
 
@@ -244,30 +314,34 @@ function spec_kvm_ram(){
   #    the guest kernel. For OS VMs this will be the same as the property
   #    max_physical_memory.
 
-  default=256
+  default=512
 
+  echo ::memstat | mdb -k
+  echo ""
   echo "Select amount of RAM (in MB)"
-  select RAM_IN_MB in "256" "512" "1024" "2048" "4096" "5120" "6144" "Custom"; do
-    case $RAM_IN_MB in
-      256) RAM_IN_MB=256; break;;
-      512) RAM_IN_MB=512; break;;
-      1024) RAM_IN_MB=1024; break;;
-      2048) RAM_IN_MB=2048; break;;
-      4096) RAM_IN_MB=4096; break;;
-      5120) RAM_IN_MB=5120; break;;
-      6144) RAM_IN_MB=6144; break;;
+  select RAM in "128" "256" "512" "1024" "2048" "4096" "5120" "6144" "Custom"; do
+    case $RAM in
+      128) RAM=128; break;;
+      256) RAM=256; break;;
+      512) RAM=512; break;;
+      1024) RAM=1024; break;;
+      2048) RAM=2048; break;;
+      4096) RAM=4096; break;;
+      5120) RAM=5120; break;;
+      6144) RAM=6144; break;;
       Custom)
       while true; do
-        read -p "Custom RAM: " RAM_IN_MB
-        if [ -z "$RAM_IN_MB" ]; then break; else echo "Needs a number!"; fi
+        read -p "Custom RAM (512): " RAM
+        if [ -z "$RAM" ]; then RAM="$default"; fi
       done
       break;;
     esac
   done
   cat >> $TEMP << EOF
-  "ram": $RAM_IN_MB,
+  "ram": $RAM,
 EOF
   return $?
+
 }
 
 function spec_kvm_cpu(){
@@ -276,15 +350,18 @@ function spec_kvm_cpu(){
   #   KVM instances that says how many VCPUs they can see
   #   Which is independent of how much CPU the zone can actually use
 
-  echo "Select number of CPUs"
+  default=1
+
+  echo "Select number of CPUs (Be sure not to use more cores than are available)"
   select VCPU in "1" "2" "3" "4" "Custom"; do
     case $VCPU in
       1) VCPU=1; break;;
       2) VCPU=2; break;;
       3) VCPU=3; break;;
       4) VCPU=4; break;;
-      Custom) echo "[*] Be sure not to use more cores than are available "
-      read -p "Custom VCPUS: " VCPU; break;;
+      Custom) read -p "Custom VCPUS (1): " VCPU
+      if [ -z "$VCPU" ]; then VCPU="$default"; fi
+      break;;
     esac
   done
   cat >> $TEMP << EOF
@@ -300,6 +377,9 @@ function spec_kvm_disk(){
   #    When creating a KVM VM or getting a KVM VM's JSON, you will use this
   #    property. This is an array of 'disk' objects.
 
+  default=blank
+
+  echo "Select disk type"
   select KVM_DISK_TYPE in "Blank: New empty disk" "Image: Disk from an image"; do
     case $KVM_DISK_TYPE in
     "Blank: New empty disk") KVM_DISK_TYPE=blank; break;;
@@ -337,29 +417,32 @@ function spec_kvm_disk(){
   done  
 
   if [ "$KVM_DISK_TYPE" == blank ]; then
-  echo "Disk size (in MB)"
-  select DISK_SIZE in "40960 (default)" "30720" "20480" "10240" "Custom"; do
+  echo "Select disk size (in MB)"
+  select DISK_SIZE in "5120" "10240" "20480" "30720" "40960" "Custom"; do
     case $DISK_SIZE in
-      "40960 (default)") DISK_SIZE=40960; break;;
-      30720) DISK_SIZE=30720; break;;
-      20480) DISK_SIZE=20480; break;;
+      5120) DISK_SIZE=5120; break;;
       10240) DISK_SIZE=10240; break;;
-      Custom) read -p "Enter disk size (in MB): " DISK_SIZE; break;;
+      20480) DISK_SIZE=20480; break;;
+      30720) DISK_SIZE=30720; break;;
+      40960) DISK_SIZE=40960; break;;
+      Custom) read -p "Custom disk size (in MB) (10240): " DISK_SIZE
+      if [ -z "$DISK_SIZE" ]; then DISK_SIZE=10240; fi
+      break;;
     esac
   done
     # Set zfs quota automatically from disk size
-    QUOTA=$(($DISK_SIZE / 1024))
+    QUOTA=$(($DISK_SIZE / 1024 + 1))
   fi
 
   if [ "$KVM_DISK_TYPE" == image ]; then
-  echo "Set disk usage by image (in MB)"
-  select IMAGE_SIZE in "40960 (default)" "30720" "20480" "10240" "Custom"; do
+  echo "Select max disk allocation (in MB)"
+  select IMAGE_SIZE in "10240" "20480" "30720" "40960" "Custom"; do
     case $IMAGE_SIZE in
-      "40960 (default)") IMAGE_SIZE=40960; break;;
-      30720) IMAGE_SIZE=30720; break;;
-      20480) IMAGE_SIZE=20480; break;;
       10240) IMAGE_SIZE=10240; break;;
-      Custom) read -p "Enter disk size (in MB): " IMAGE_SIZE; break;;
+      20480) IMAGE_SIZE=20480; break;;
+      30720) IMAGE_SIZE=30720; break;;
+      40960) IMAGE_SIZE=40960; break;;
+      Custom) read -p "Custom disk size (in MB): " IMAGE_SIZE; break;;
     esac
   done
     # Set zfs quota automatically from disk size
@@ -392,7 +475,7 @@ EOF
       "image_uuid": "$IMAGE_UUID",
       "image_name": "$IMAGE_NAME",
       "image_size": $IMAGE_SIZE,
-      "quota": "$QUOTA",
+      "quota": "$QUOTA"
       }
   ],
 EOF
@@ -406,53 +489,6 @@ EOF
     esac
   done
   return $?
-
-}
-
-
-function spec_dns(){
-
-  #  global: resolvers
-  #    For OS VMs, this value sets the resolvers which get put into
-  #    /etc/resolv.conf at VM creation. If maintain_resolvers is set to
-  #    true, updating this property will also update the resolvers in
-  #    /etc/resolv.conf. For KVM VMs these will get passed as the resolvers
-  #    with DHCP responses.
-
-  default=(8.8.8.8 8.8.4.4)
-
-echo "Select a DNS"
-select DNS in "8.8.8.8, 8.8.4.4" "Custom"; do
-    case $DNS in
-      "8.8.8.8, 8.8.4.4") DNS_PRIMARY="8.8.8.8"; DNS_SECONDARY="8.8.4.4"; break;;
-      Custom) read -p "Set Primary DNS (8.8.8.8): " DNS_PRIMARY
-      read -p "Set Secondary DNS (8.8.4.4): " DNS_SECONDARY
-
-      if [ -z "$DNS_PRIMARY" ]; then DNS_PRIMARY="${default[0]}"; fi
-      if [ -z "$DNS_SECONDARY" ]; then DNS_SECONDARY="${default[1]}"; fi
-
-    # Input sanitization
-    #      while true; do
-    #      read -p "Set Primary DNS: " DNS_PRIMARY
-    #      read -p "Set Secondary DNS: " DNS_SECONDARY
-    #
-    #      echo "$DNS_PRIMARY" | grep -E "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
-    #      echo "$DNS_SECONDARY" | grep -E "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
-    #
-    #      break
-    #      done
-      break;;
-    esac
-done
-
-echo "[*] DNS: $DNS_PRIMARY, $DNS_SECONDARY"
-
-  cat >> $TEMP << EOF
-  "resolvers": [
-    "$DNS_PRIMARY",
-    "$DNS_SECONDARY"
-  ],
-EOF
 
 }
 
@@ -500,12 +536,12 @@ function spec_nics(){
 
   while true; do
     read -p "Set VM internal NIC name (eth0): " INTERFACE
-    if [ -z "$INTERFACE" ]; then INTERFACE="eth0"; fi
+    if [ -z "$INTERFACE" ]; then INTERFACE=$INTERFACE; fi
 
     nictagadm list
     echo ""
     read -p "Set NIC Tag (external): " NICTAG
-    if [ -z "$NICTAG" ]; then NICTAG="external"; fi
+    if [ -z "$NICTAG" ]; then NICTAG=$NICTAG; fi
 
     echo "Set NIC as default gw?"
     select ANSWER in "Yes (default)" "No"; do
@@ -538,7 +574,7 @@ function spec_nics(){
       esac
     done
 
-    if [ "$TYPE" == kvm ]; then
+    if [ "$BRAND" == kvm ]; then
       echo "Choose NIC Model: (virtio: best performance, but needs drivers; e1000 & rtl8139: more universal) "
       select ANSWER in "virtio (default)" "e1000" "rtl8139"; do
         case $ANSWER in
@@ -571,7 +607,7 @@ function spec_nics(){
 
 
 
-  if [ $TYPE == os ]; then
+  if [ "$BRAND" == os ]; then
   cat >> $TEMP << EOF
   "nics": [
     {
@@ -586,7 +622,7 @@ function spec_nics(){
 EOF
   fi
 
-  if [ $TYPE == lx ]; then
+  if [ "$BRAND" == lx ]; then
   cat >> $TEMP << EOF
   "nics": [
     {
@@ -601,7 +637,7 @@ EOF
 EOF
   fi
 
-  if [ ! $TYPE == kvm ]; then
+  if [ "$BRAND" == kvm ]; then
   cat >> $TEMP << EOF
   "nics": [
     {
@@ -628,7 +664,51 @@ EOF
 
 }
 
+function spec_dns(){
 
+  #  global: resolvers
+  #    For OS VMs, this value sets the resolvers which get put into
+  #    /etc/resolv.conf at VM creation. If maintain_resolvers is set to
+  #    true, updating this property will also update the resolvers in
+  #    /etc/resolv.conf. For KVM VMs these will get passed as the resolvers
+  #    with DHCP responses.
+
+  default=(8.8.8.8 8.8.4.4)
+
+echo "Select a DNS"
+select DNS in "8.8.8.8, 8.8.4.4" "Custom"; do
+    case $DNS in
+      "8.8.8.8, 8.8.4.4") DNS_PRIMARY="8.8.8.8"; DNS_SECONDARY="8.8.4.4"; break;;
+      Custom) read -p "Set Primary DNS (8.8.8.8): " DNS_PRIMARY
+      read -p "Set Secondary DNS (8.8.4.4): " DNS_SECONDARY
+
+      if [ -z "$DNS_PRIMARY" ]; then DNS_PRIMARY="${default[0]}"; fi
+      if [ -z "$DNS_SECONDARY" ]; then DNS_SECONDARY="${default[1]}"; fi
+
+    # Input sanitization
+    #      while true; do
+    #      read -p "Set Primary DNS: " DNS_PRIMARY
+    #      read -p "Set Secondary DNS: " DNS_SECONDARY
+    #
+    #      echo "$DNS_PRIMARY" | grep -E "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
+    #      echo "$DNS_SECONDARY" | grep -E "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
+    #
+    #      break
+    #      done
+      break;;
+    esac
+done
+
+echo "[*] DNS: $DNS_PRIMARY, $DNS_SECONDARY"
+
+  cat >> $TEMP << EOF
+  "resolvers": [
+    "$DNS_PRIMARY",
+    "$DNS_SECONDARY"
+  ]
+EOF
+
+}
 
 
 
@@ -638,10 +718,13 @@ function os(){
 
   spec_brand
   spec_alias
+  spec_hostname
   spec_autoboot
   spec_oslx_ram
   spec_oslx_cpu
   spec_oslx_disk
+  spec_nics
+  spec_dns
   return $?
 
 }
@@ -650,10 +733,13 @@ function lx(){
 
   spec_brand
   spec_alias
+  spec_hostname
   spec_autoboot
   spec_oslx_ram
   spec_oslx_cpu
   spec_oslx_disk
+  spec_nics
+  spec_dns
   return $?
 
 }
@@ -662,17 +748,16 @@ function kvm(){
 
   spec_brand
   spec_alias
+  spec_hostname
   spec_autoboot
   spec_kvm_ram
   spec_kvm_cpu
-  spec_kvm_disks
+  spec_kvm_disk
+  spec_nics
+  spec_dns
   return $?
 
 }
-
-
-
-
 
 
 function vmadm_validate(){
@@ -686,22 +771,20 @@ function vmadm_validate(){
 
 }
 
+function vmadm_create(){
+
+  # Create VM from $TEMP
+  vmadm create -f "$TEMP"
+  return $?
+
+}
+
 function create_vm_os(){
 
-  # Create OS zone VM
-  vmadm create << EOF
-{
-  "nics": [{"interface": "$INTERNAL_IF_NAME", "nic_tag": "$NICTAG", "model": "$NICMODEL", "ip": "$IPADDRESS", "gateway": "$GATEWAY", "netmask": "$NETMASK", "primary": $PRIMARY}],
-  "resolvers": ["$DNS_PRIMARY", "$DNS_SECONDARY"],
-  "image_uuid": "$IMAGE_IMPORT_UUID",
-  "quota": "$DISK_IN_GiB",
-  "cpu_cap": $CPU_CAP,
-  "max_physical_memory": $MAX_MEM_IN_MB,
-  "autoboot": $AUTOBOOT,
-  "alias": "$ALIAS",
-  "brand": "joyent"
-}
-EOF
+  os
+  vmadm_validate
+  vmadm_create
+
   return $?
 
 }
@@ -712,42 +795,22 @@ function create_vm_lx(){
   # Create LX VM
   vmadm create << EOF
 {
-  "nics": [
-    {
-      "interface": "$INTERNAL_IF_NAME",
-      "nic_tag": "$NICTAG",
-      "model": "$VIRTIO_E1000_RTL8139",
-      "ip": "$IPADDRESS",
-      "gateway": "$GATEWAY",
-      "netmask": "$NETMASK",
-      "primary": $PRIMARY
-    }
-  ],
-  "resolvers": [
-    "$DNS_PRIMARY",
-    "$DNS_SECONDARY"
-  ],
   "image_uuid": "$IMAGE_IMPORT_UUID",
-  "quota": "$DISK_IN_GiB",
-  "cpu_cap": $CPU_CAP,
-  "max_physical_memory": $MAX_MEM_IN_MB,
-  "autoboot": $TRUE_FALSE,
-  "alias": "$ALIAS",
+
   "kernel_version": "3.13.0",
-  "brand": "lx"
+
 }
 EOF
-  return !?
+  return $?
 
 }
 
 
 function create_vm_kvm(){
 
-  # Create KVM VM
-  vmadm create << EOF
-
-EOF
+  kvm
+  vmadm_validate
+  vmadm_create
   return $?
 
 }
@@ -755,39 +818,11 @@ EOF
 
 function create_vm_iso(){
 
-  # Create ISO VM
-  vmadm create << EOF
-{
-  "nics": [
-    {
-      "interface": "$INTERFACE",
-      "nic_tag": "$NICTAG",
-      "model": "$VIRTIO_E1000_RTL8139",
-      "ip": "$IPADDRESS",
-      "gateway": "$GATEWAY",
-      "netmask": "$NETMASK",
-      "primary": true
-    }
-  ],
-  "resolvers": [
-    "$DNS_PRIMARY",
-    "$DNS_SECONDARY"
-  ],
-  "disks": [
-    {
-      "boot": $BOOTABLE,
-      "model": "$DISK_MODEL",
-      "size": $DISK_IN_MB,
-      "compression": "$COMPRESSION"
-    }
-  ],
-  "vcpus": "$VCPU",
-  "ram": $RAM_IN_MB,
-  "autoboot": $AUTO_BOOT,
-  "alias": "$ALIAS",
-  "brand": "kvm"
-}
-EOF
+  kvm
+  vmadm_validate
+  vmadm_create
+
+  return $?
 
 }
 
