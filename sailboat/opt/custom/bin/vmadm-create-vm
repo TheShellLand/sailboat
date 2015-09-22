@@ -347,12 +347,14 @@ function spec_lx_kernel(){
   #  lx: kernel_version
   #    This sets the version of Linux to emulate for LX VMs
 
+  default="3.13.0"
+
   echo "Select kernel version (setting an unsupported kernel version may cause instabilities in the VM)"
   select KERNEL_VERSION in "3.13.0" "Custom"; do
     case $KERNEL_VERSION in
       "3.13.0") KERNEL_VERSION="3.13.0"; break;;
       Custom) read -p "Custom kernel version (3.13.0): " KERNEL_VERSION
-      if [ -z "$KERNEL_VERSION" ]; then KERNEL_VERSION="3.13.0"; fi
+      if [ -z "$KERNEL_VERSION" ]; then KERNEL_VERSION="$default"; fi
       break;;
     esac
   done
