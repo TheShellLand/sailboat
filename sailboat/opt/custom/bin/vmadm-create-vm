@@ -322,10 +322,10 @@ function spec_oslx_image(){
 
     echo ""
     if [ "$BRAND" == os ]; then
-      imgadm list -o uuid,name,version,os,type,published | grep -vw bsd | grep -vw other | grep -vw linux | grep -vw lx-dataset; fi
+      imgadm list -o uuid,name,version,os,type,published | grep -vw linux | grep -vw bsd | grep -vw other | grep -vw lx-dataset; fi
 
     if [ "$BRAND" == lx ]; then
-      imgadm list -o uuid,name,version,os,type,published | grep -w lx-dataset; fi
+      imgadm list -o uuid,name,version,os,type,published | grep -vw linux | grep -vw bsd | grep -vw smartos; fi
 
       echo ""
       read -p "Select existing image: " IMAGE_UUID
