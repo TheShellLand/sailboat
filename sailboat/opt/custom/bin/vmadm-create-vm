@@ -356,7 +356,7 @@ function spec_lx_kernel(){
   done
 
   cat >> $TEMP << EOF
-  "kernel_version": "3.13.0",
+  "kernel_version": "$KERNEL_VERSION",
 EOF
   return $?
 
