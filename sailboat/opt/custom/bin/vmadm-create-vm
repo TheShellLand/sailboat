@@ -307,6 +307,16 @@ EOF
 
 }
 
+function spec_oslx_image(){
+
+
+  cat >> $TEMP << EOF
+  "image_uuid": "$IMAGE_IMPORT_UUID",
+EOF
+  return $?
+
+}
+
 function spec_lx_kernel(){
 
   #  lx: kernel_version
@@ -454,6 +464,33 @@ function spec_kvm_disk(){
   fi
 
   if [ "$KVM_DISK_TYPE" == image ]; then
+  echo ""
+  imgadm list -o uuid,name,version,os,type,published | head -1
+  imgadm list -o uuid,name,version,os,type,published | grep linux
+  echo ""
+  while true; do
+    read -p "Select existing image: " IMAGE_UUID
+    if [ ! -z "$IMAGE_UUID" ]; then imgadm list | grep "$IMAGE_UUID" 2>/dev/null >/dev/null; fi
+    if [ $? == 0 ]; then break
+      else echo "Image UUID does not exist. Check your spelling and try again"; fi
+    sleep 2
+    echo ""
+    imgadm list -o uuid,name,version,os,type,published | head -1
+    imgadm list -o uuid,name,version,os,type,published | grep linux
+    echo ""
+  done
+  while true; do
+    read -p "Image name: " IMAGE_NAME
+    if [ ! -z "$IMAGE_NAME" ]; then imgadm list | grep "$IMAGE_NAME" 2>/dev/null >/dev/null; fi
+    if [ $? == 0 ]; then break
+      else echo "Image name does not exist. Check your spelling and try again"; fi
+    sleep 2
+    echo ""
+    imgadm list -o uuid,name,version,os,type,published | head -1
+    imgadm list -o uuid,name,version,os,type,published | grep linux
+    echo ""
+  done
+
   echo "Select max disk allocation (in MB)"
   select IMAGE_SIZE in "10240" "20480" "30720" "40960" "Custom"; do
     case $IMAGE_SIZE in
@@ -467,8 +504,6 @@ function spec_kvm_disk(){
     # Set zfs quota automatically from disk size
     QUOTA=$(($IMAGE_SIZE / 1024))
   fi
-
-
 
   if [ "$KVM_DISK_TYPE" == blank ]; then
     cat >> $TEMP << EOF
@@ -754,6 +789,7 @@ function lx(){
   spec_alias
   spec_hostname
   spec_autoboot
+  spec_lx_kernel
   spec_oslx_ram
   spec_oslx_cpu
   spec_oslx_disk
@@ -811,15 +847,7 @@ function create_vm_os(){
 
 function create_vm_lx(){
 
-  # Create LX VM
-  vmadm create << EOF
-{
-  "image_uuid": "$IMAGE_IMPORT_UUID",
 
-
-
-}
-EOF
   return $?
 
 }
