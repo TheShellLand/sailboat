@@ -18,7 +18,7 @@
     <stability value='Unstable'/>
     <template>
       <common_name>
-        <loctext xml:lang='C'>SmartOS Add SSH Public Key Script</loctext>
+        <loctext xml:lang='C'>SmartOS Add SSH Public Key Service</loctext>
       </common_name>
     </template>
   </service>
