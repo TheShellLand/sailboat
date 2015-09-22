@@ -309,7 +309,30 @@ EOF
 
 function spec_oslx_image(){
 
+  #  os: image_uuid
+  #    This should be a UUID identifying the image for the VM if a VM was
+  #    created from an image.
+  #    NOTE: when this is passed for KVM VMs, it specifies the *zone root*
+  #    dataset which is not visible from within the VM. The user-visible
+  #    dataset will be the one specified through the disks.*.image_uuid.
+  #    Normally you do *not* want to set this for KVM.
 
+
+  echo ""
+  imgadm list -o uuid,name,version,os,type,published | head -1
+  imgadm list -o uuid,name,version,os,type,published | grep linux
+  echo ""
+  while true; do
+    read -p "Select existing image: " IMAGE_UUID
+    if [ ! -z "$IMAGE_UUID" ]; then imgadm list | grep "$IMAGE_UUID" 2>/dev/null >/dev/null; fi
+    if [ $? == 0 ]; then break
+      else echo "Image UUID does not exist. Check your spelling and try again"; fi
+    sleep 2
+    echo ""
+    imgadm list -o uuid,name,version,os,type,published | head -1
+    imgadm list -o uuid,name,version,os,type,published | grep linux
+    echo ""
+  done
   cat >> $TEMP << EOF
   "image_uuid": "$IMAGE_IMPORT_UUID",
 EOF
@@ -553,6 +576,9 @@ function spec_nics(){
   #
   #  global: nic_tag
   #    nic_tag or interface name that the virtual NIC is attached to
+  #    This option for a NIC determines which host NIC the VMs nic will be
+  #    attached to. The value can be either a nic tag as listed in the 'NIC
+  #    Names' field in `sysinfo`, or an etherstub or device name.
   #
   #  KVM: model
   #    Driver for this NIC (virtio, e1000, rtl8139)
@@ -580,22 +606,58 @@ function spec_nics(){
   #  blocked_outgoing_ports
 
 
-  INTERFACE=eth0
-  NICTAG=external
-  IPADDRESS=unset
-  GATEWAY=unset
-  NETMASK=unset
-  PRIMARY=unset
+  INTERFACE_default=eth0
+  NICTAG_default=external
+  IPADDRESS_default=unset
+  GATEWAY_default=unset
+  NETMASK_default=unset
+  PRIMARY_default=unset
 
 
   while true; do
     read -p "Set VM internal NIC name (eth0): " INTERFACE
-    if [ -z "$INTERFACE" ]; then INTERFACE=$INTERFACE; fi
+    if [ -z "$INTERFACE" ]; then INTERFACE=$INTERFACE_default; fi
 
-    nictagadm list
-    echo ""
-    read -p "Set NIC Tag (external): " NICTAG
-    if [ -z "$NICTAG" ]; then NICTAG=$NICTAG; fi
+    echo "Select NIC type to use"
+    select ANSWER in "NIC Tag (default)" "virtual NIC" "etherstub"; do
+      case $ANSWER in
+        "NIC Tag (default)")
+          while true; do
+            nictagadm list | head -1; nictagadm list | grep normal
+            read -p "Set NIC Tag for traffic to go over (external): " NICTAG
+            if [ -z "$NICTAG" ]; then NICTAG=$NICTAG_default; fi
+            if [ ! -z "$NICTAG" ]; then nictagadm list | grep "$NICTAG" 2>/dev/null >/dev/null
+              if [ ! $? == 0 ]; then echo "NIC Tag not found. Check spelling and try again"
+                else break; fi
+            fi
+          done
+          break ;;
+
+        "virtual NIC")
+          while true; do
+          dladm show-vnic
+          read -p "Set virtual NIC: " NICTAG
+          if [ -z "$NICTAG" ]; then echo "You must enter in a virtual NIC"
+            else dladm show-vnic | grep "$NICTAG" 2>/dev/null >/dev/null
+              if [ ! "$?" == 0 ]; then echo "Virtual NIC not found. Check spelling and try again"
+                else break; fi
+          fi
+          done
+          break ;;
+
+        etherstub)
+          while true; do
+          dladm show-etherstub
+          read -p "Set etherstub: " NICTAG
+          if [ -z "$NICTAG" ]; then echo "You must enter an etherstub"
+            else dladm show-etherstub | grep "$NICTAG" 2>/dev/null >/dev/null
+              if [ ! "$?" == 0 ]; then echo "Etherstub not found. Check spelling and try again"
+                else break; fi
+          fi
+          done
+          break ;;
+      esac
+    done
 
     echo "Set NIC as default gw?"
     select ANSWER in "Yes (default)" "No"; do
