@@ -59,6 +59,7 @@ function choose_vm_type(){
       "ISO - Windows, Linux, Mac, any ISO") create_vm iso; return $? ;;
     esac
   done
+  new_vm_filename
   return $?
 
 }
@@ -68,6 +69,7 @@ function create_vm(){
 
   BRAND="$1"
   export BRAND
+  new_vm_filename $BRAND
 
   if [ "$BRAND" == "os" ]; then create_vm_os; return $?; fi
   if [ "$BRAND" == "lx" ]; then create_vm_lx; return $?; fi
@@ -118,23 +120,6 @@ function new_vm_filename(){
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function spec_brand(){
 
   #  global: brand
@@ -162,6 +147,8 @@ function spec_alias(){
   cat >> $TEMP << EOF
   "alias": "$ALIAS",
 EOF
+
+  new_vm_filename "$ALIAS"
   return $?
 
 }
@@ -173,7 +160,12 @@ function spec_hostname(){
   #    the VM. For OS VMs, this value will get set in several files at
   #    creation time, but changing it later will do nothing.
 
-  read -p "" HOSTNAME
+  while true; do
+  read -p "Set hostname: " HOSTNAME
+  if [ -z "$HOSTNAME" ]; then echo "Please enter a hostname"
+    else break; fi
+  done
+
   cat >> $TEMP << EOF
   "hostname": "$HOSTNAME",
 EOF
@@ -634,7 +626,6 @@ function spec_nics(){
             fi
           done
           break ;;
-
         "virtual NIC")
           while true; do
           dladm show-vnic
@@ -646,7 +637,6 @@ function spec_nics(){
           fi
           done
           break ;;
-
         etherstub)
           while true; do
           dladm show-etherstub
@@ -660,14 +650,16 @@ function spec_nics(){
           break ;;
       esac
     done
-    break
-  done
 
     echo "Set NIC as default gw?"
     select ANSWER in "Yes (default)" "No"; do
       case $ANSWER in
-        "Yes (default)") PRIMARY=true; break ;;
-        "No") PRIMARY=false; break ;;
+        "Yes (default)")
+          PRIMARY=true
+          break ;;
+        "No")
+          PRIMARY=false
+          break ;;
       esac
     done
 
@@ -677,8 +669,7 @@ function spec_nics(){
           IPADDRESS=dhcp
           GATEWAY=dhcp
           NETMASK=dhcp
-          break
-        ;;
+          break ;;
         "Static")
           read -p "IPv4: " IPADDRESS
           if [ -z "$IPADDRESS" ]; then echo Try again; break; fi
@@ -689,8 +680,7 @@ function spec_nics(){
           read -p "Netmask (255.255.255.0): " NETMASK
           if [ -z "$NETMASK" ]; then NETMASK="255.255.255.0"; fi
 
-          break
-        ;;
+          break ;;
       esac
     done
 
@@ -702,8 +692,7 @@ function spec_nics(){
           e1000) NICMODEL="e1000"; break;;
           rtl8139) NICMODEL="rtl8139"; break;;
         esac
-      done
-    fi
+      done; fi
 
     echo ""
     echo "== Current settings =="
@@ -722,7 +711,7 @@ function spec_nics(){
       esac
     done
 
-  if [ "$FINISHED" == true ]; then break; fi
+    if [ "$FINISHED" == true ]; then break; fi
   done
 
 
@@ -773,6 +762,8 @@ EOF
 EOF
   fi
 
+  new_vm_filename "$NICTAG$INTERFACE"
+
   echo "Add another NIC?"
   select ANSWER in "Yes" "No (default)"; do
     case $ANSWER in
@@ -783,6 +774,7 @@ EOF
   return $?
 
 }
+
 
 function spec_dns(){
 
