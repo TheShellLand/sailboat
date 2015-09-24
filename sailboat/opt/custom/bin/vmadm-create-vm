@@ -796,12 +796,11 @@ function spec_kvm_iso_copy(){
   VIRTIO=($(ls "$VIRTIOS" | grep .iso))
 
   while true; do
+    echo ""
     vmadm list
     read -p "Set UUID of the new VM: " UUID
     if [ ! -z "$UUID" ]; then vmadm list | grep -w "$UUID"
-      if [ $? == 0 ]; then
-        vmadm stop "$UUID" -F
-        break
+      if [ $? == 0 ]; then break
         else echo "UUID not found. Check spelling and try again"; fi
     fi
   done
