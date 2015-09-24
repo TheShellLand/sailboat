@@ -830,7 +830,7 @@ function spec_kvm_iso_copy(){
               select ANSWER in "${VIRTIO[@]}"; do
                 VIRTIO="$ANSWER"
                 echo "[*] vmadm boot "$UUID" order=cd,once=d cdrom=/"$ISO",ide cdrom=/"$VIRTIO",ide"
-                vmadm boot "$UUID" order=cd,once=d cdrom=/"$ISO",ide cdrom=/"$VIRTIO",ide
+                vmadm start "$UUID" order=cd,once=d cdrom=/"$ISO",ide cdrom=/"$VIRTIO",ide
 
               done
               break ;;
@@ -840,7 +840,7 @@ function spec_kvm_iso_copy(){
         done
 
         echo "[*] vmadm boot "$UUID" order=cd,once=d cdrom=/"$ISO",ide"
-        vmadm boot "$UUID" order=cd,once=d cdrom=/"$ISO",ide
+        vmadm start "$UUID" order=cd,once=d cdrom=/"$ISO",ide
         break ;;
       No) break ;;
     esac
