@@ -797,7 +797,7 @@ function spec_kvm_iso_copy(){
 
   while true; do
     echo ""
-    vmadm list
+    #vmadm list
     read -p "Set UUID of the new VM: " UUID
     if [ ! -z "$UUID" ]; then vmadm list | grep -w "$UUID"
       if [ $? == 0 ]; then break
@@ -829,9 +829,13 @@ function spec_kvm_iso_copy(){
               echo "Select virtio iso"
               select ANSWER in "${VIRTIO[@]}"; do
                 VIRTIO="$ANSWER"
+                echo ""
+                echo Copying "$VIRTIO" "==>" /zones/"$UUID"/root/
+                echo ""
+                rsync -ih --progress $VIRTIOS/"$VIRTIO" /zones/"$UUID"/root/
                 echo "[*] vmadm boot "$UUID" order=cd,once=d cdrom=/"$ISO",ide cdrom=/"$VIRTIO",ide"
                 vmadm start "$UUID" order=cd,once=d cdrom=/"$ISO",ide cdrom=/"$VIRTIO",ide
-
+                break
               done
               break ;;
 
@@ -1276,19 +1280,19 @@ function vmadm_create(){
 function info(){
 
   while true; do
-    read -p "Enter new VM UUID: " INFO
-    vmadm list | grep -w "$INFO" 2>/dev/null >/dev/null
+    read -p "Enter new VM UUID: " UUID
+    vmadm list | grep -w "$UUID" 2>/dev/null >/dev/null
       if [ $? == 0 ]; then break
         else echo "UUID not found. Please check spelling and try again"; fi
   done
 
   while true; do
-    vmadm start "$INFO"
+    vmadm start "$UUID"
     while true; do
       echo "[*] Awaiting network"
-      if [ "$BRAND" == joyent ]; then zlogin "$INFO" ipadm show-addr; fi
-      if [ "$BRAND" == lx ]; then zlogin "$INFO" ip a; fi
-      if [ "$BRAND" == kvm ]; then vmadm info "$INFO" vnc; fi
+      if [ "$BRAND" == joyent ]; then zlogin "$UUID" ipadm show-addr; fi
+      if [ "$BRAND" == lx ]; then zlogin "$UUID" ip a; fi
+      if [ "$BRAND" == kvm ]; then vmadm info "$UUID" vnc; fi
       echo ""
       read -p "Press enter to refresh network lookup, or ^C to exit"
     done
