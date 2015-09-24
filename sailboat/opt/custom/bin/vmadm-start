@@ -8,24 +8,64 @@
 
 
 function startvm(){
+    clear
 
-    vmadm list
+    print '
+CiAgICAgICAgICAgICAgICAgXCAgICAgLwogICAgICAgICAgICAgXCAgICBvIF4g
+byAgICAvCiAgICAgICAgICAgICAgIFwgKCAgICAgKSAvCiAgICBfX19fX19fX19f
+X18oJSUlJSUlJSlfX19fX19fX19fX18KICAgKCAgICAgLyAgIC8gICklJSUlJSUl
+KCAgXCAgIFwgICAgICkKICAgKF9fXy9fX18vX18vICAgICAgICAgICBcX19cX19f
+XF9fXykKICAgICAgKCAgICAgLyAgLyglJSUlJSUlKVwgIFwgICAgICkKICAgICAg
+IChfXy9fX18vICglJSUlJSUlKSBcX19fXF9fKQogICAgICAgICAgICAgICAvKCAg
+ICAgICApXAogICAgICAgICAgICAgLyAgICglJSUlJSkgICBcCiAgICAgICAgICAg
+ICAgICAgICglJSUpCiAgICAgICAgICAgICAgICAgICAgIQoKICAgIFNtYXJ0T1Mg
+Vk0gQm9vdGVyCgo=' | \
+    openssl enc -base64 -d
+
+    vmadm list -s alias
     while true; do
-    read -p "Enter VM UUID: " INFO
-    vmadm list | grep -w "$INFO" 2>/dev/null >/dev/null
+    read -p "Enter VM UUID: " UUID
+    vmadm list | grep -w "$UUID" 2>/dev/null >/dev/null
       if [ $? == 0 ]; then break
         else echo "UUID not found. Please check spelling and try again"; fi
     done
+    echo ""
+
+    echo "Boot from ISO?"
+    select ANSWER in "Yes" "No"; do
+        case $ANSWER in
+            Yes)
+                echo ""
+                array=($(ls /zones/"$UUID"/root | grep .iso))
+                while true; do
+                    echo "Set ISO"
+                    select ISO in ${array[@]}; do
+                    ls /zones/"$UUID"/root | grep -w "$ISO" 2>/dev/null >/dev/null
+                    if [ $? == 0 ]; then
+                        echo vmadm start "$UUID" order=cd,once=d cdrom=/"$ISO",ide
+                        vmadm start "$UUID" order=cd,once=d cdrom=/"$ISO",ide
+                        break
+                        else echo "ISO not found. Check spelling and try again"; fi
+                    done
+                    break
+                done
+
+                break ;;
+            No) break ;;
+        esac
+    done
+    echo ""
 
     while true; do
-        vmadm start "$INFO"
+        vmadm start "$UUID"
         while true; do
-          echo "[*] Awaiting network"
-          if [ "$BRAND" == joyent ]; then zlogin "$INFO" ipadm show-addr; fi
-          if [ "$BRAND" == lx ]; then zlogin "$INFO" ip a; fi
-          if [ "$BRAND" == kvm ]; then vmadm info "$INFO" vnc; fi
-          echo ""
-          read -p "Press enter to refresh network lookup, or ^C to exit"
+            vmadm list uuid="$UUID"
+            echo "[*] Awaiting network"
+            if [ "$BRAND" == joyent ]; then zlogin "$UUID" ipadm show-addr; fi
+            if [ "$BRAND" == lx ]; then zlogin "$UUID" ip a; fi
+            if [ "$BRAND" == kvm ]; then vmadm info "$UUID" vnc; fi
+            echo ""
+            read -p "Press enter to refresh network lookup, or ^C to exit"
         done
     done
     echo ""
