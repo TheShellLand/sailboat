@@ -42,9 +42,28 @@ Vk0gQm9vdGVyCgo=' | \
                     select ISO in ${array[@]}; do
                     ls /zones/"$UUID"/root | grep -w "$ISO" 2>/dev/null >/dev/null
                     if [ $? == 0 ]; then
-                        echo vmadm start "$UUID" order=cd,once=d cdrom=/"$ISO",ide
-                        vmadm start "$UUID" order=cd,once=d cdrom=/"$ISO",ide
+                        echo ""
+                        echo "Attach virtio ISO?"
+                        select ANSWER in "Yes" "No"; do
+                            case $ANSWER in
+                                Yes)
+                                    echo ""
+                                    echo "Select virtio"
+                                    select VIRTIO in ${array[@]}; do
+                                        echo ""
+                                        echo "[*]" vmadm start "$UUID" order=cd,once=d cdrom=/"$ISO",ide cdrom=/"$VIRTIO",ide
+                                        vmadm start "$UUID" order=cd,once=d cdrom=/"$ISO",ide cdrom=/"$VIRTIO",ide
+                                        break
+                                    done
+                                    break ;;
+                                No)
+                                    echo "[*]" vmadm start "$UUID" order=cd,once=d cdrom=/"$ISO",ide
+                                    vmadm start "$UUID" order=cd,once=d cdrom=/"$ISO",ide
+                                    break ;;
+                            esac
+                        done
                         break
+
                         else echo "ISO not found. Check spelling and try again"; fi
                     done
                     break
@@ -60,6 +79,7 @@ Vk0gQm9vdGVyCgo=' | \
         vmadm start "$UUID"
         while true; do
             vmadm list uuid="$UUID"
+            echo ""
             echo "[*] Awaiting network"
             if [ "$BRAND" == joyent ]; then zlogin "$UUID" ipadm show-addr; fi
             if [ "$BRAND" == lx ]; then zlogin "$UUID" ip a; fi
