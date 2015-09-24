@@ -44,6 +44,8 @@ function pre_check_temp(){
   export TEMPSPEC
   TEMP="$SPECS_DIR/$TEMPSPEC"
   export TEMP
+  echo "[*] This session: $TEMPSPEC"
+  echo ""
   return $?
 
 }
@@ -116,11 +118,11 @@ function new_vm_filename(){
   text_sanitize "$1"
   CHOMP="$output_sanatized"
 
+  if [ "$CHOMP" == "JSONAAAAAA" ]; then VM_FILENAME="$VM_FILENAME".json; export VM_FILENAME
+      export NEW_VM="$SPECS_DIR/$VM_FILENAME"; fi
   if [ -z "$CHOMP" ]; then VM_FILENAME=""; export VM_FILENAME; return $?; fi
   if [ -z "$VM_FILENAME" ]; then VM_FILENAME="$CHOMP"; export VM_FILENAME; return $?; fi
   if [ ! -z "$VM_FILENAME" ]; then VM_FILENAME="$VM_FILENAME"__"$CHOMP"; export VM_FILENAME; return $?; fi
-  if [ "$CHOMP" == ".json" ]; then VM_FILENAME="$VM_FILENAME".json; export VM_FILENAME; return $?; fi
-  export NEW_VM="$SPECS_DIR/$VM_FILENAME"
   return $?
 
 }
@@ -128,7 +130,7 @@ function new_vm_filename(){
 
 function spec_init(){
 
-  cat >> $TEMP << EOF
+  cat > $TEMP << EOF
 {
 EOF
   return $?
@@ -745,7 +747,7 @@ function spec_kvm_disk(){
       "model": "$DISK_MODEL",
       "compression": "$COMPRESSION",
       "size": $DISK_SIZE
-      }
+    }
   ],
 EOF
   fi
@@ -762,7 +764,7 @@ EOF
       "image_uuid": "$IMAGE_UUID",
       "image_name": "$IMAGE_NAME",
       "image_size": $IMAGE_SIZE
-      }
+    }
   ],
 EOF
   fi
@@ -1030,6 +1032,8 @@ function spec_nics(){
       esac
     done
 
+    new_vm_filename "$NICTAG""$INTERFACE"
+
     if [ "$FINISHED" == true ]; then break; fi
   done
   echo ""
@@ -1082,8 +1086,6 @@ EOF
   ],
 EOF
   fi
-
-  new_vm_filename "$NICTAG$INTERFACE"
 
   echo "Add another NIC?"
   select ANSWER in "Yes" "No (default)"; do
@@ -1154,6 +1156,8 @@ function spec_end(){
   cat >> $TEMP << EOF
 }
 EOF
+
+  new_vm_filename JSONAAAAAA
   return $?
 
 }
@@ -1226,6 +1230,7 @@ function vmadm_create(){
 
   # Create VM from $TEMP
   vmadm create -f "$NEW_VM"
+  echo ""
   return $?
 
 }
