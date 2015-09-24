@@ -967,8 +967,6 @@ function spec_nics(){
       case $ANSWER in
         "DHCP (default)")
           IPADDRESS=dhcp
-          GATEWAY=dhcp
-          NETMASK=
           break ;;
         "Static")
           while true; do
@@ -1017,8 +1015,9 @@ function spec_nics(){
     if [ "$BRAND" == kvm ]; then
       echo ">> NIC Model:" "$NICMODEL"; fi
     echo ">> IPv4:" "$IPADDRESS"
-    echo ">> Gateway:" "$GATEWAY"
-    if [ ! -z "$NETMASK" ]; then
+    if [ ! "$IPADDRESS" == dhcp ]; then
+    echo ">> Gateway:" "$GATEWAY"; fi
+    if [ ! "$IPADDRESS" == dhcp ]; then
       echo ">> Netmask:" "$NETMASK"; fi
     echo ">> Primary NIC:" "$PRIMARY"
     echo ""
@@ -1050,7 +1049,6 @@ function spec_nics(){
     {
       "nic_tag": "$NICTAG",
       "ip": "$IPADDRESS",
-      "gateway": "$GATEWAY",
       "primary": $PRIMARY
     }
   ],
@@ -1077,7 +1075,6 @@ EOF
     {
       "nic_tag": "$NICTAG",
       "ip": "$IPADDRESS",
-      "gateway": "$GATEWAY",
       "primary": $PRIMARY
     }
   ],
@@ -1105,7 +1102,6 @@ EOF
       "nic_tag": "$NICTAG",
       "model": "$NICMODEL",
       "ip": "$IPADDRESS",
-      "gateway": "$GATEWAY",
       "primary": $PRIMARY
     }
   ],
@@ -1277,15 +1273,20 @@ function vmadm_create(){
 
 function info(){
 
+  vmadm list | grep -w "$INFO" 2>/dev/null >/dev/null
+  read -p "Enter new VM UUID: " INFO
   while true; do
-    read -p "Enter new VM UUID: " INFO
-    vmadm list | grep -w "$INFO" 2>/dev/null >/dev/null
     if [ $? == 0 ]; then
+      vmadm start "$INFO"
+      while true; do
+        echo "[*] Awaiting network"
         if [ "$BRAND" == joyent ]; then zlogin "$INFO" ipadm show-addr; fi
         if [ "$BRAND" == lx ]; then zlogin "$INFO" ip a; fi
-        if [ "$BRAND" == kvm ]; then vmadm info "$INFO" nics
-          vmadm info "$INFO" vnc; fi
-        break
+        if [ "$BRAND" == kvm ]; then vmadm info "$INFO" vnc; fi
+        echo ""
+        read -p "Press enter to refresh network lookup, or ^C to exit"
+      done
+
       else echo "UUID not found. Please check spelling and try again"; fi
   done
   echo ""
@@ -1318,7 +1319,7 @@ function create_vm_kvm(){
   kvm
   vmadm_validate
   vmadm_create
-
+  echo ""
   echo "Would you like to boot from an ISO?"
   select ANSWER in "Yes" "No"; do
     case $ANSWER in
