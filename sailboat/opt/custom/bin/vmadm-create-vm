@@ -892,7 +892,7 @@ function spec_nics(){
   #  blocked_outgoing_ports
 
 
-  INTERFACE_default=eth0
+  INTERFACE_default=net0
   NICTAG_default=external
   IPADDRESS_default=unset
   GATEWAY_default=unset
@@ -901,11 +901,10 @@ function spec_nics(){
 
 
   while true; do
-    if [ "$BRAND" == kvm ]; then
-      read -p "Set VM internal NIC name (eth0): " INTERFACE
-      if [ -z "$INTERFACE" ]; then INTERFACE=$INTERFACE_default; fi
-      echo ""
-    fi
+
+    read -p "Set VM internal NIC name (net0): " INTERFACE
+    if [ -z "$INTERFACE" ]; then INTERFACE=$INTERFACE_default; fi
+    echo ""
 
     echo "Select NIC type to use"
     select ANSWER in "NIC tag (default)" "virtual NIC" "etherstub"; do
@@ -1053,6 +1052,7 @@ function spec_nics(){
       cat >> $TEMP << EOF
   "nics": [
     {
+      "interface": "$INTERFACE",
       "nic_tag": "$NICTAG",
       "ip": "$IPADDRESS",
       "primary": $PRIMARY
@@ -1063,6 +1063,7 @@ EOF
       cat >> $TEMP << EOF
   "nics": [
     {
+      "interface": "$INTERFACE",
       "nic_tag": "$NICTAG",
       "ip": "$IPADDRESS",
       "gateway": "$GATEWAY",
@@ -1079,6 +1080,7 @@ EOF
       cat >> $TEMP << EOF
   "nics": [
     {
+      "interface": "$INTERFACE",
       "nic_tag": "$NICTAG",
       "ip": "$IPADDRESS",
       "primary": $PRIMARY
@@ -1089,6 +1091,7 @@ EOF
       cat >> $TEMP << EOF
   "nics": [
     {
+      "interface": "$INTERFACE",
       "nic_tag": "$NICTAG",
       "ip": "$IPADDRESS",
       "gateway": "$GATEWAY",
@@ -1105,6 +1108,7 @@ EOF
       cat >> $TEMP << EOF
   "nics": [
     {
+      "interface": "$INTERFACE",
       "nic_tag": "$NICTAG",
       "model": "$NICMODEL",
       "ip": "$IPADDRESS",
@@ -1116,6 +1120,7 @@ EOF
       cat >> $TEMP << EOF
   "nics": [
     {
+      "interface": "$INTERFACE",
       "nic_tag": "$NICTAG",
       "model": "$NICMODEL",
       "ip": "$IPADDRESS",
