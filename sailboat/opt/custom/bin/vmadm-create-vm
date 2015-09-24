@@ -1061,6 +1061,7 @@ EOF
   cat >> $TEMP << EOF
   "nics": [
     {
+      "interface": "$INTERFACE",
       "nic_tag": "$NICTAG",
       "ip": "$IPADDRESS",
       "gateway": "$GATEWAY",
@@ -1244,9 +1245,10 @@ function info(){
     read -p "Enter new VM UUID: " INFO
     vmadm list | grep -w "$INFO" 2>/dev/null >/dev/null
     if [ $? == 0 ]; then
-        if [ "$BRAND" == joyent ]; then vmadm get $INFO | json nics; fi
-        if [ "$BRAND" == lx ]; then vmadm get $INFO | json nics; fi
-        if [ "$BRAND" == kvm ]; then vmadm info $INFO vnc; fi
+        if [ "$BRAND" == joyent ]; then zlogin "$INFO" ipadm show-addr; fi
+        if [ "$BRAND" == lx ]; then zlogin "$INFO" ip a; fi
+        if [ "$BRAND" == kvm ]; then vmadm info "$INFO" nics
+          vmadm info "$INFO" vnc; fi
         break
       else echo "UUID not found. Please check spelling and try again"; fi
   done
@@ -1260,6 +1262,7 @@ function create_vm_os(){
   os
   vmadm_validate
   vmadm_create
+  info
   return $?
 
 }
@@ -1269,6 +1272,7 @@ function create_vm_lx(){
   lx
   vmadm_validate
   vmadm_create
+  info
   return $?
 
 }
