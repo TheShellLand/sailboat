@@ -8,4 +8,4 @@
 # 0xB4AE7C4C
 #
 
-vmadm list -o uuid,type,ram,state,nics.0.ip,alias
+vmadm list -o uuid,type,ram,state,nics.0.ip,alias -s alias
