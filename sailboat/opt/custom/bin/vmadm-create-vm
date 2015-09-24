@@ -895,9 +895,11 @@ function spec_nics(){
 
 
   while true; do
-    read -p "Set VM internal NIC name (eth0): " INTERFACE
-    if [ -z "$INTERFACE" ]; then INTERFACE=$INTERFACE_default; fi
-    echo ""
+    if [ "$BRAND" == kvm ]; then
+      read -p "Set VM internal NIC name (eth0): " INTERFACE
+      if [ -z "$INTERFACE" ]; then INTERFACE=$INTERFACE_default; fi
+      echo ""
+    fi
 
     echo "Select NIC type to use"
     select ANSWER in "NIC tag (default)" "virtual NIC" "etherstub"; do
@@ -1044,7 +1046,6 @@ function spec_nics(){
   cat >> $TEMP << EOF
   "nics": [
     {
-      "interface": "$INTERFACE",
       "nic_tag": "$NICTAG",
       "ip": "$IPADDRESS",
       "gateway": "$GATEWAY",
@@ -1060,7 +1061,6 @@ EOF
   cat >> $TEMP << EOF
   "nics": [
     {
-      "interface": "$INTERFACE",
       "nic_tag": "$NICTAG",
       "ip": "$IPADDRESS",
       "gateway": "$GATEWAY",
@@ -1244,10 +1244,10 @@ function info(){
     read -p "Enter new VM UUID: " INFO
     vmadm list | grep -w "$INFO" 2>/dev/null >/dev/null
     if [ $? == 0 ]; then
-        #if [ "$BRAND" == joyent ]; then vmadm get $INFO | json nics; fi
-        #if [ "$BRAND" == lx ]; then vmadm get $INFO | json nics; fi
-        if [ "$BRAND" == kvm ]; then vmadm info $INFO vnc
-        break; fi
+        if [ "$BRAND" == joyent ]; then vmadm get $INFO | json nics; fi
+        if [ "$BRAND" == lx ]; then vmadm get $INFO | json nics; fi
+        if [ "$BRAND" == kvm ]; then vmadm info $INFO vnc; fi
+        break
       else echo "UUID not found. Please check spelling and try again"; fi
   done
   echo ""
@@ -1260,7 +1260,6 @@ function create_vm_os(){
   os
   vmadm_validate
   vmadm_create
-  info
   return $?
 
 }
@@ -1270,7 +1269,6 @@ function create_vm_lx(){
   lx
   vmadm_validate
   vmadm_create
-  info
   return $?
 
 }
