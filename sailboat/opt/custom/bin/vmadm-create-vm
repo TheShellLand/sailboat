@@ -21,7 +21,6 @@ function _EasyTiger(){
 
 }
 
-
 function pre_check(){
 
   # Location for new VM specs
@@ -35,6 +34,7 @@ function pre_check(){
   return $?
 
 }
+
 function pre_check_temp(){
 
   # New temp filename
@@ -51,19 +51,28 @@ function choose_vm_type(){
 
   # LX, OS, or KVM
   echo "Select a VM type"
-  select BRAND in "OS - Native, allows RAM over provisioning" "LX - Native, runs linux flavors, yum" "KVM - Linux image" "ISO - Windows, Linux, Mac, any ISO"; do
+  select BRAND in "OS - Native, allows RAM over provisioning" "LX - Native, runs linux flavors, yum" "KVM - Linux image, Windows, Mac, any ISO"; do
     case $BRAND in
-      "OS - Native, allows RAM over provisioning") create_vm os ; return $? ;;
-      "LX - Native, runs linux flavors, yum") create_vm lx; return $? ;;
-      "KVM - Linux image") create_vm kvm; return $? ;;
-      "ISO - Windows, Linux, Mac, any ISO") create_vm iso; return $? ;;
+      "OS - Native, allows RAM over provisioning")
+        create_vm os
+
+        break ;;
+      "LX - Native, runs linux flavors, yum")
+        create_vm lx
+
+        break ;;
+      "KVM - Linux image, Windows, Mac, any ISO")
+        create_vm kvm
+
+        break ;;
     esac
   done
+  
+  # Initialize naming scheme
   new_vm_filename
   return $?
 
 }
-
 
 function create_vm(){
 
@@ -73,12 +82,10 @@ function create_vm(){
 
   if [ "$BRAND" == "os" ]; then create_vm_os; return $?; fi
   if [ "$BRAND" == "lx" ]; then create_vm_lx; return $?; fi
-  if [ "$BRAND" == "iso" ]; then create_vm_iso; return $?; fi
   if [ "$BRAND" == "kvm" ]; then create_vm_kvm; return $?; fi
   return $?
 
 }
-
 
 function text_sanitize(){
 
@@ -94,12 +101,11 @@ function text_sanitize(){
 
 }
 
-
 function new_vm_filename(){
 
-  # Naming scheme for the new VM spec file: $BRAND_$ALIAS_(link)(vnics).json
+  # Naming scheme for the new VM spec file: $BRAND_$ALIAS_$HOSTNAME_(link)(vnics).json
   #
-  # (e.g. os__elasticdb__elastic0eshard0.json, kvm__win__nat0external0__sql0internal0.json)
+  # (e.g. os__elasticdb__elastic0eshard0.json, kvm__win__windows10__nat0external0__sql0internal0.json)
   # All text will run though text_sanitize(); only characters allowed are regex [a-zA-Z0-9_]
 
   text_sanitize "$1"
@@ -115,18 +121,15 @@ function new_vm_filename(){
 }
 
 
-
-
-
-
-
 function spec_brand(){
 
   #  global: brand
   #    This will be one of 'joyent' or 'joyent-minimal' for OS virtualization
   #    and 'kvm' for full hardware virtualization. This is a required value
   #    for VM creation.
-         
+
+  # Brand is received from create_vm()
+  
   cat >> $TEMP << EOF
   "brand": "$BRAND",
 EOF
@@ -144,6 +147,7 @@ function spec_alias(){
 
   read -p "Set VM name (epoch: $default): " ALIAS
   if [ -z "$ALIAS" ]; then ALIAS=created-$default; fi
+  
   cat >> $TEMP << EOF
   "alias": "$ALIAS",
 EOF
@@ -161,18 +165,19 @@ function spec_hostname(){
   #    creation time, but changing it later will do nothing.
 
   while true; do
-  read -p "Set hostname: " HOSTNAME
-  if [ -z "$HOSTNAME" ]; then echo "Please enter a hostname"
-    else break; fi
+    read -p "Set hostname: " HOSTNAME
+    if [ -z "$HOSTNAME" ]; then echo "Please enter a hostname"
+      else break; fi
   done
 
   cat >> $TEMP << EOF
   "hostname": "$HOSTNAME",
 EOF
+
+  new_vm_filename "$HOSTNAME"
   return $?
 
 }
-
 
 function spec_autoboot(){
 
@@ -187,12 +192,19 @@ function spec_autoboot(){
   default=false
 
   echo "Autoboot if SmartOS reboots? (This will crash the server if it runs out of resources!!)"
-  select AUTOBOOT in "Yes" "No"; do
+  select AUTOBOOT in "Yes" "No (default)"; do
     case $AUTOBOOT in
-      Yes) AUTOBOOT=true; break;;
-      No) AUTOBOOT=false; break;;
+      Yes) 
+        AUTOBOOT=true
+      
+        break ;;
+      "No (default)")
+        AUTOBOOT=false
+      
+        break ;;
     esac
   done
+  
   cat >> $TEMP << EOF
   "autoboot": $AUTOBOOT,
 EOF
@@ -214,17 +226,37 @@ function spec_oslx_ram(){
   echo "Select max RAM usage (in MB)"
   select RAM_MAX in "128" "256" "512" "1024" "2048" "4096" "Custom"; do
     case $RAM_MAX in
-      128) RAM_MAX=128; break;;
-      256) RAM_MAX=256; break;;
-      512) RAM_MAX=512; break;;
-      1024) RAM_MAX=1024; break;;
-      2048) RAM_MAX=2048; break;;
-      4096) RAM_MAX=4096; break;;
-      Custom) read -p "Custom max RAM usage: " RAM_MAX
-      if [ -z "$RAM_MAX" ]; then RAM_MAX="$default"; fi
-      break;;
+      128) 
+        RAM_MAX=128
+        
+        break ;;
+      256) 
+        RAM_MAX=256
+        
+        break ;;
+      512) 
+        RAM_MAX=512
+        
+        break ;;
+      1024) 
+        RAM_MAX=1024
+        
+        break ;;
+      2048) 
+        RAM_MAX=2048
+        
+        break ;;
+      4096) 
+        RAM_MAX=4096
+        
+        break ;;
+      Custom) 
+        read -p "Custom max RAM usage (128): " RAM_MAX
+        if [ -z "$RAM_MAX" ]; then RAM_MAX="$default"; fi
+        break ;;
     esac
   done
+  
   cat >> $TEMP << EOF
   "max_physical_memory": $RAM_MAX,
 EOF
@@ -247,15 +279,29 @@ function spec_oslx_cpu(){
   echo "Select number of CPUs (a value of 300 means up to 3 full CPUs):"
   select CPU_CAP in "100 (default)" "200" "300" "400" "Custom"; do
     case $CPU_CAP in
-      "100 (default)") CPU_CAP=100; break;;
-      200) CPU_CAP=200; break;;
-      300) CPU_CAP=300; break;;
-      400) CPU_CAP=400; break;;
-      Custom) read -p "Custom CPU value (100): " CPU_CAP
-      if [ -z "$CPU_CAP" ]; then CPU_CAP="$default"; fi
-      break;;
+      "100 (default)") 
+        CPU_CAP=100
+        
+        break ;;
+      200) 
+        CPU_CAP=200
+        
+        break ;;
+      300) 
+        CPU_CAP=300
+        
+        break ;;
+      400) 
+        CPU_CAP=400
+        
+        break ;;
+      Custom) 
+        read -p "Custom CPU value (100): " CPU_CAP
+        if [ -z "$CPU_CAP" ]; then CPU_CAP="$default"; fi
+        break ;;
     esac
   done
+  
   cat >> $TEMP << EOF
   "cpu_cap": $CPU_CAP,
 EOF
@@ -280,18 +326,41 @@ function spec_oslx_disk(){
   echo "Select disk size (in GB)"
   select QUOTA in "5 (default)" "10" "15" "20" "25" "30" "40" "Custom"; do
     case $QUOTA in
-      "5 (default)") QUOTA=5; break;;
-      10) QUOTA=10; break;;
-      15) QUOTA=15; break;;
-      20) QUOTA=20; break;;
-      25) QUOTA=25; break;;
-      30) QUOTA=30; break;;
-      40) QUOTA=40; break;;
-      Custom) read -p "Custom disk size (in GB) (5): " QUOTA
-      if [ -z "$QUOTA" ]; then QUOTA="$default"; fi
-      break;;
+      "5 (default)") 
+        QUOTA=5
+        
+        break ;;
+      10) 
+        QUOTA=10
+        
+        break ;;
+      15) 
+        QUOTA=15
+        
+        break ;;
+      20) 
+        QUOTA=20
+        
+        break ;;
+      25) 
+        QUOTA=25
+        
+        break ;;
+      30) 
+        QUOTA=30
+        
+        break ;;
+      40) 
+        QUOTA=40
+        
+        break ;;
+      Custom) 
+        read -p "Custom disk size (in GB) (5): " QUOTA
+        if [ -z "$QUOTA" ]; then QUOTA="$default"; fi
+        break ;;
     esac
   done
+  
   cat >> $TEMP << EOF
   "quota": "$QUOTA",
 EOF
@@ -309,9 +378,7 @@ function spec_oslx_image(){
   #    dataset will be the one specified through the disks.*.image_uuid.
   #    Normally you do *not* want to set this for KVM.
 
-
   while true; do
-
     echo ""
     if [ "$BRAND" == os ]; then
       imgadm list -o uuid,name,version,os,type,published | grep -vw linux | grep -vw bsd | grep -vw other | grep -vw lx-dataset; fi
@@ -327,8 +394,9 @@ function spec_oslx_image(){
             else echo "Image UUID does not exist. Check your spelling and try again"; sleep 2; fi
       fi
   done
+  
   cat >> $TEMP << EOF
-  "image_uuid": "$IMAGE_IMPORT_UUID",
+  "image_uuid": "$IMAGE_UUID",
 EOF
   return $?
 
@@ -344,10 +412,14 @@ function spec_lx_kernel(){
   echo "Select kernel version (setting an unsupported kernel version may cause instabilities in the VM)"
   select KERNEL_VERSION in "3.13.0" "Custom"; do
     case $KERNEL_VERSION in
-      "3.13.0") KERNEL_VERSION="3.13.0"; break;;
-      Custom) read -p "Custom kernel version (3.13.0): " KERNEL_VERSION
-      if [ -z "$KERNEL_VERSION" ]; then KERNEL_VERSION="$default"; fi
-      break;;
+      "3.13.0") 
+        KERNEL_VERSION="3.13.0"
+        
+        break ;;
+      Custom) 
+        read -p "Custom kernel version (3.13.0): " KERNEL_VERSION
+        if [ -z "$KERNEL_VERSION" ]; then KERNEL_VERSION="$default"; fi
+        break ;;
     esac
   done
 
@@ -372,19 +444,45 @@ function spec_kvm_ram(){
   echo "Select amount of RAM (in MB)"
   select RAM in "128" "256" "512" "1024" "2048" "4096" "5120" "6144" "Custom"; do
     case $RAM in
-      128) RAM=128; break;;
-      256) RAM=256; break;;
-      512) RAM=512; break;;
-      1024) RAM=1024; break;;
-      2048) RAM=2048; break;;
-      4096) RAM=4096; break;;
-      5120) RAM=5120; break;;
-      6144) RAM=6144; break;;
-      Custom) read -p "Custom RAM (512): " RAM
+      128) 
+        RAM=128
+        
+        break ;;
+      256) 
+        RAM=256
+        
+        break ;;
+      512) 
+        RAM=512
+        
+        break ;;
+      1024) 
+        RAM=1024
+        
+        break ;;
+      2048) 
+        RAM=2048
+        
+        break ;;
+      4096) 
+        RAM=4096
+        
+        break ;;
+      5120) 
+        RAM=5120
+        
+        break ;;
+      6144) 
+        RAM=6144
+        
+        break ;;
+      Custom) 
+        read -p "Custom RAM (512): " RAM
         if [ -z "$RAM" ]; then RAM="$default"; fi
-      break;;
+        break ;;
     esac
   done
+  
   cat >> $TEMP << EOF
   "ram": $RAM,
 EOF
@@ -403,15 +501,29 @@ function spec_kvm_cpu(){
   echo "Select number of CPUs (Be sure not to use more cores than are available)"
   select VCPU in "1" "2" "3" "4" "Custom"; do
     case $VCPU in
-      1) VCPU=1; break;;
-      2) VCPU=2; break;;
-      3) VCPU=3; break;;
-      4) VCPU=4; break;;
-      Custom) read -p "Custom VCPUS (1): " VCPU
-      if [ -z "$VCPU" ]; then VCPU="$default"; fi
-      break;;
+      1) 
+        VCPU=1
+      
+        break ;;
+      2) 
+        VCPU=2
+      
+        break ;;
+      3) 
+        VCPU=3
+      
+        break ;;
+      4) 
+        VCPU=4
+        
+        break ;;
+      Custom) 
+        read -p "Custom VCPUS (1): " VCPU
+        if [ -z "$VCPU" ]; then VCPU="$default"; fi
+        break ;;
     esac
   done
+  
   cat >> $TEMP << EOF
   "vcpus": "$VCPU",
 EOF
@@ -430,37 +542,76 @@ function spec_kvm_disk(){
   echo "Select disk type"
   select KVM_DISK_TYPE in "Blank: New empty disk" "Image: Disk from an image"; do
     case $KVM_DISK_TYPE in
-    "Blank: New empty disk") KVM_DISK_TYPE="$default"; break;;
-    "Image: Disk from an image") KVM_DISK_TYPE=image; break;;
+    "Blank: New empty disk") 
+      KVM_DISK_TYPE="$default"
+      
+      break ;;
+    "Image: Disk from an image") 
+      KVM_DISK_TYPE=image
+      
+      break ;;
     esac
   done
 
   echo "Will this be the boot disk?"
   select BOOTABLE in "Yes" "No"; do
     case $BOOTABLE in
-      Yes) BOOTABLE=true; break;;
-      No) BOOTABLE=false; break;;
+      Yes) 
+        BOOTABLE=true
+      
+        break ;;
+      No) 
+        BOOTABLE=false
+      
+        break ;;
     esac
   done
   
   echo "Select disk model"
   select DISK_MODEL in "virtio (default)" "ide" "scsi"; do
     case $DISK_MODEL in
-      "virtio (default)") DISK_MODEL=virtio; break;;
-      ide) DISK_MODEL=ide; break;;
-      scsi) DISK_MODEL=scsi; break;;
+      "virtio (default)") 
+        DISK_MODEL=virtio
+      
+        break ;;
+      ide) 
+        DISK_MODEL=ide
+      
+        break ;;
+      scsi) 
+        DISK_MODEL=scsi
+      
+        break ;;
     esac
   done
   
   echo "Select compression"
   select COMPRESSION in "on (default)" "off" "lzjb" "gzip" "gzip-N" "zle"; do
     case $COMPRESSION in
-      "on (default)") COMPRESSION=on; break;;
-      off) COMPRESSION=off; break;;
-      lzjb) COMPRESSION=lzjb; break;;
-      gzip) COMPRESSION=gzip; break;;
-      gzip-N) COMPRESSION="gzip-N"; break;;
-      zle) COMPRESSION=zle; break;;
+      "on (default)") 
+        COMPRESSION=on
+      
+        break ;;
+      off) 
+        COMPRESSION=off
+      
+        break ;;
+      lzjb) 
+        COMPRESSION=lzjb
+      
+        break ;;
+      gzip) 
+        COMPRESSION=gzip
+      
+        break ;;
+      gzip-N) 
+        COMPRESSION="gzip-N"
+      
+        break ;;
+      zle) 
+        COMPRESSION=zle
+      
+        break ;;
     esac
   done  
 
@@ -468,14 +619,30 @@ function spec_kvm_disk(){
   echo "Select disk size (in MB)"
   select DISK_SIZE in "5120" "10240" "20480" "30720" "40960" "Custom"; do
     case $DISK_SIZE in
-      5120) DISK_SIZE=5120; break;;
-      10240) DISK_SIZE=10240; break;;
-      20480) DISK_SIZE=20480; break;;
-      30720) DISK_SIZE=30720; break;;
-      40960) DISK_SIZE=40960; break;;
-      Custom) read -p "Custom disk size (in MB) (10240): " DISK_SIZE
-      if [ -z "$DISK_SIZE" ]; then DISK_SIZE=10240; fi
-      break;;
+      5120) 
+        DISK_SIZE=5120
+
+        break ;;
+      10240) 
+        DISK_SIZE=10240
+
+        break ;;
+      20480) 
+        DISK_SIZE=20480
+
+        break ;;
+      30720) 
+        DISK_SIZE=30720
+
+        break ;;
+      40960) 
+        DISK_SIZE=40960
+
+        break ;;
+      Custom) 
+        read -p "Custom disk size (in MB) (10240): " DISK_SIZE
+        if [ -z "$DISK_SIZE" ]; then DISK_SIZE=10240; fi
+        break ;;
     esac
   done
     # Set zfs quota automatically from disk size
@@ -511,17 +678,33 @@ function spec_kvm_disk(){
   echo "Select max disk allocation (in MB)"
   select IMAGE_SIZE in "10240" "20480" "30720" "40960" "Custom"; do
     case $IMAGE_SIZE in
-      10240) IMAGE_SIZE=10240; break;;
-      20480) IMAGE_SIZE=20480; break;;
-      30720) IMAGE_SIZE=30720; break;;
-      40960) IMAGE_SIZE=40960; break;;
-      Custom) read -p "Custom disk size (in MB): " IMAGE_SIZE; break;;
+      10240) 
+        IMAGE_SIZE=10240
+        
+        break ;;
+      20480) 
+        IMAGE_SIZE=20480
+         
+        break ;;
+      30720) 
+        IMAGE_SIZE=30720
+         
+        break ;;
+      40960) 
+        IMAGE_SIZE=40960
+        
+        break ;;
+      Custom) 
+        read -p "Custom disk size (in MB): " IMAGE_SIZE
+      
+        break ;;
     esac
   done
     # Set zfs quota automatically from disk size
     QUOTA=$(($IMAGE_SIZE / 1024))
   fi
 
+  # JSON
   if [ "$KVM_DISK_TYPE" == blank ]; then
     cat >> $TEMP << EOF
   "disks": [
@@ -536,6 +719,7 @@ function spec_kvm_disk(){
 EOF
   fi
 
+  # JSON
   if [ "$KVM_DISK_TYPE" == image ]; then
     cat >> $TEMP << EOF
   "disks": [
@@ -555,10 +739,76 @@ EOF
   echo "Add another Disk?"
   select ANSWER in "Yes" "No (default)"; do
     case $ANSWER in
-      "Yes") spec_kvm_disk; break;;
-      "No (default)") break;;
+      "Yes") spec_kvm_disk
+      
+      break ;;
+      "No (default)") break ;;
     esac
   done
+  return $?
+
+}
+
+function spec_kvm_iso_copy(){
+
+  # Selects and copies an ISO to the KVM root for booting
+  # e.g. Windows
+
+  # Optional: Attaching virtio driver iso
+
+  ISOS=/opt/custom/iso
+  ISO=($(ls "$ISOS" | grep .iso))
+  VIRTIOS=/opt/custom/iso/virtio
+  VIRTIO=($(ls "$VIRTIOS" | grep .iso))
+
+  while true; do
+    vmadm list
+    read -p "Set UUID of the new VM: " UUID
+    if [ ! -z "$UUID" ]; then vmadm list | grep -w "$UUID"
+      if [ $? == 0 ]; then
+        vmadm stop "$UUID" -F
+        break
+        else echo "UUID not found. Check spelling and try again"; fi
+    fi
+  done
+  echo ""
+
+  echo "Select an ISO"
+  select ANSWER in "${ISO[@]}"; do
+    ISO="$ANSWER"
+    echo ""
+    echo Copying "$ISO" "==>" /zones/"$UUID"/root/
+    echo ""
+    rsync -ih --progress $ISOS/"$ISO" /zones/"$UUID"/root/
+    break
+  done
+  echo ""
+
+  echo "Boot?"
+  select ANSWER in "Yes" "No"; do
+    case $ANSWER in
+      Yes)
+        echo "Attach virtio ISO?"
+        select ANSWER in "Yes" "No"; do
+          case $ANSWER in
+            Yes)
+              echo "Select virtio iso"
+              select ANSWER in "${VIRTIO[@]}"; do
+                VIRTIO="$ANSWER"
+                vmadm boot "$UUID" order=cd,once=d cdrom=/"$ISO",ide cdrom=/"$VIRTIO",ide
+              done
+              break ;;
+
+            No) break ;;
+          esac
+        done
+
+        vmadm boot "$UUID" order=cd,once=d cdrom=/"$ISO",ide
+        break ;;
+      No) break ;;
+    esac
+  done
+
   return $?
 
 }
@@ -611,6 +861,7 @@ function spec_nics(){
   while true; do
     read -p "Set VM internal NIC name (eth0): " INTERFACE
     if [ -z "$INTERFACE" ]; then INTERFACE=$INTERFACE_default; fi
+    echo ""
 
     echo "Select NIC type to use"
     select ANSWER in "NIC tag (default)" "virtual NIC" "etherstub"; do
@@ -621,48 +872,56 @@ function spec_nics(){
             read -p "Set NIC tag for traffic to go over (external): " NICTAG
             if [ -z "$NICTAG" ]; then NICTAG=$NICTAG_default; fi
             if [ ! -z "$NICTAG" ]; then nictagadm list | grep -w "$NICTAG" 2>/dev/null >/dev/null
-              if [ ! $? == 0 ]; then echo "NIC tag not found. Check spelling and try again"
-                else break; fi
+              if [ $? == 0 ]; then break
+                else echo "NIC tag not found. Check spelling and try again"; fi
             fi
           done
+
           break ;;
         "virtual NIC")
           while true; do
-          dladm show-vnic
-          read -p "Set virtual NIC: " NICTAG
-          if [ -z "$NICTAG" ]; then echo "You must enter in a virtual NIC"; sleep 2
-            else dladm show-vnic | grep -w "$NICTAG" 2>/dev/null >/dev/null
-              if [ ! "$?" == 0 ]; then echo "Virtual NIC not found. Check spelling and try again"
-                else break; fi
-          fi
+            dladm show-vnic
+            read -p "Set virtual NIC: " NICTAG
+            if [ -z "$NICTAG" ]; then echo "You must enter in a virtual NIC"; sleep 2
+              else dladm show-vnic | grep -w "$NICTAG" 2>/dev/null >/dev/null
+                if [ "$?" == 0 ]; then break
+                  else echo "Virtual NIC not found. Check spelling and try again"; fi
+            fi
           done
+
           break ;;
         etherstub)
           while true; do
-          dladm show-etherstub
-          read -p "Set etherstub: " NICTAG
-          if [ -z "$NICTAG" ]; then echo "You must enter an etherstub"; sleep 2
-            else dladm show-etherstub | grep -w "$NICTAG" 2>/dev/null >/dev/null
-              if [ ! "$?" == 0 ]; then echo "Etherstub not found. Check spelling and try again"
-                else break; fi
-          fi
+            dladm show-etherstub
+            read -p "Set etherstub: " NICTAG
+            if [ -z "$NICTAG" ]; then echo "You must enter an etherstub"; sleep 2
+              else dladm show-etherstub | grep -w "$NICTAG" 2>/dev/null >/dev/null
+                if [ "$?" == 0 ]; then break
+                  else echo "Etherstub not found. Check spelling and try again"; fi
+            fi
           done
+
           break ;;
       esac
     done
+    echo ""
 
     echo "Set NIC as default gw?"
     select ANSWER in "Yes (default)" "No"; do
       case $ANSWER in
         "Yes (default)")
           PRIMARY=true
+          
           break ;;
         "No")
           PRIMARY=false
+          
           break ;;
       esac
     done
+    echo ""
 
+    echo "Set addressing type"
     select ANSWER in "DHCP (default)" "Static"; do
       case $ANSWER in
         "DHCP (default)")
@@ -671,11 +930,17 @@ function spec_nics(){
           NETMASK=dhcp
           break ;;
         "Static")
-          read -p "IPv4: " IPADDRESS
-          if [ -z "$IPADDRESS" ]; then echo Try again; break; fi
+          while true; do
+            read -p "IPv4: " IPADDRESS
+            if [ -z "$IPADDRESS" ]; then echo "You must enter an IP"
+              else break; fi
+          done
 
-          read -p "Gateway: " GATEWAY
-          if [ -z "$GATEWAY" ]; then echo Try again; break; fi
+          while true; do
+            read -p "Gateway: " GATEWAY
+            if [ -z "$GATEWAY" ]; then echo "You must enter a gateway IP"
+              else break; fi
+          done
 
           read -p "Netmask (255.255.255.0): " NETMASK
           if [ -z "$NETMASK" ]; then NETMASK="255.255.255.0"; fi
@@ -683,21 +948,33 @@ function spec_nics(){
           break ;;
       esac
     done
+    echo ""
 
     if [ "$BRAND" == kvm ]; then
       echo "Choose NIC Model: (virtio: best performance, but needs drivers; e1000 & rtl8139: more universal) "
       select ANSWER in "virtio (default)" "e1000" "rtl8139"; do
         case $ANSWER in
-          "virtio (default)") NICMODEL="virtio"; break;;
-          e1000) NICMODEL="e1000"; break;;
-          rtl8139) NICMODEL="rtl8139"; break;;
+          "virtio (default)") 
+            NICMODEL="virtio"
+            
+            break ;;
+          e1000) 
+            NICMODEL="e1000"
+            
+            break ;;
+          rtl8139) 
+            NICMODEL="rtl8139"
+            
+            break ;;
         esac
       done; fi
 
     echo ""
-    echo "== Current settings =="
+    echo "== Your Configuration =="
     echo ">> Interface:" "$INTERFACE"
     echo ">> NIC Tag:" "$NICTAG"
+    if [ "$BRAND" == kvm ]; then
+      echo ">> NIC Model:" "$NICMODEL"; fi
     echo ">> IPv4:" "$IPADDRESS"
     echo ">> Gateway:" "$GATEWAY"
     echo ">> Netmask:" "$NETMASK"
@@ -706,16 +983,23 @@ function spec_nics(){
     echo "Confirm?"
     select ANSWER in "Done" "There's something wrong"; do
       case $ANSWER in
-        "Done") FINISHED="true"; break;;
-        "There's something wrong") FINISHED="false"; break;;
+        "Done") 
+          FINISHED="true"
+        
+          break ;;
+        "There's something wrong") 
+          FINISHED="false"
+        
+          break ;;
       esac
     done
+    echo ""
 
     if [ "$FINISHED" == true ]; then break; fi
   done
 
 
-
+  # JSON
   if [ "$BRAND" == os ]; then
   cat >> $TEMP << EOF
   "nics": [
@@ -731,6 +1015,7 @@ function spec_nics(){
 EOF
   fi
 
+  # JSON
   if [ "$BRAND" == lx ]; then
   cat >> $TEMP << EOF
   "nics": [
@@ -746,6 +1031,7 @@ EOF
 EOF
   fi
 
+  # JSON
   if [ "$BRAND" == kvm ]; then
   cat >> $TEMP << EOF
   "nics": [
@@ -767,14 +1053,13 @@ EOF
   echo "Add another NIC?"
   select ANSWER in "Yes" "No (default)"; do
     case $ANSWER in
-      "Yes") spec_nics; break;;
-      "No (default)") break;;
+      "Yes") spec_nics; break ;;
+      "No (default)") break ;;
     esac
   done
   return $?
 
 }
-
 
 function spec_dns(){
 
@@ -787,31 +1072,33 @@ function spec_dns(){
 
   default=(8.8.8.8 8.8.4.4)
 
-echo "Select a DNS"
-select DNS in "8.8.8.8, 8.8.4.4" "Custom"; do
-    case $DNS in
-      "8.8.8.8, 8.8.4.4") DNS_PRIMARY="8.8.8.8"; DNS_SECONDARY="8.8.4.4"; break;;
-      Custom) read -p "Set Primary DNS (8.8.8.8): " DNS_PRIMARY
-      read -p "Set Secondary DNS (8.8.4.4): " DNS_SECONDARY
+  echo "Select a DNS"
+  select DNS in "8.8.8.8, 8.8.4.4" "Custom"; do
+      case $DNS in
+        "8.8.8.8, 8.8.4.4") 
+          DNS_PRIMARY="8.8.8.8"; DNS_SECONDARY="8.8.4.4"
+          
+          break ;;
+        Custom)
+          read -p "Set Primary DNS (8.8.8.8): " DNS_PRIMARY
+          read -p "Set Secondary DNS (8.8.4.4): " DNS_SECONDARY
 
-      if [ -z "$DNS_PRIMARY" ]; then DNS_PRIMARY="${default[0]}"; fi
-      if [ -z "$DNS_SECONDARY" ]; then DNS_SECONDARY="${default[1]}"; fi
+          if [ -z "$DNS_PRIMARY" ]; then DNS_PRIMARY="${default[0]}"; fi
+          if [ -z "$DNS_SECONDARY" ]; then DNS_SECONDARY="${default[1]}"; fi
 
-    # Input sanitization
-    #      while true; do
-    #      read -p "Set Primary DNS: " DNS_PRIMARY
-    #      read -p "Set Secondary DNS: " DNS_SECONDARY
-    #
-    #      echo "$DNS_PRIMARY" | grep -E "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
-    #      echo "$DNS_SECONDARY" | grep -E "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
-    #
-    #      break
-    #      done
-      break;;
-    esac
-done
-
-echo "[*] DNS: $DNS_PRIMARY, $DNS_SECONDARY"
+          # Input sanitization
+          #      while true; do
+          #      read -p "Set Primary DNS: " DNS_PRIMARY
+          #      read -p "Set Secondary DNS: " DNS_SECONDARY
+          #
+          #      echo "$DNS_PRIMARY" | grep -E "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
+          #      echo "$DNS_SECONDARY" | grep -E "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
+          #
+          #      break
+          #      done
+          break ;;
+      esac
+  done
 
   cat >> $TEMP << EOF
   "resolvers": [
@@ -819,11 +1106,10 @@ echo "[*] DNS: $DNS_PRIMARY, $DNS_SECONDARY"
     "$DNS_SECONDARY"
   ]
 EOF
+  echo "[*] DNS: $DNS_PRIMARY, $DNS_SECONDARY"
+  return $?
 
 }
-
-
-
 
 
 function os(){
@@ -878,7 +1164,7 @@ function vmadm_validate(){
   # Validates the new vm spec before renaming to $VM_FILENAME
   vmadm validate create -f "$TEMP" >/dev/null 2>/dev/null
   # exit code check
-  if [ $? == 0 ]; then echo "[*] JSON Validated"; mv "$TEMP" "$NEW_VM"; return $?; fi
+  if [ $? == 0 ]; then echo "[*] JSON Validated"; mv "$TEMP" "$NEW_VM"; break; fi
   if [ $? -gt 0 ]; then echo "[ERROR] Validating $TEMPSPEC"; exit 0; fi
   return $?
 
@@ -897,7 +1183,6 @@ function create_vm_os(){
   os
   vmadm_validate
   vmadm_create
-
   return $?
 
 }
@@ -905,7 +1190,9 @@ function create_vm_os(){
 
 function create_vm_lx(){
 
-
+  lx
+  vmadm_validate
+  vmadm_create
   return $?
 
 }
@@ -916,57 +1203,24 @@ function create_vm_kvm(){
   kvm
   vmadm_validate
   vmadm_create
+
+  echo "Would you like to boot from an ISO?"
+  select ANSWER in "Yes" "No"; do
+    case $ANSWER in
+      Yes)
+        spec_kvm_iso_copy
+
+        break ;;
+      No) break ;;
+    esac
+  done
+
+
   return $?
 
 }
 
 
-function create_vm_iso(){
-
-  kvm
-  vmadm_validate
-  vmadm_create
-
-  return $?
-
-}
-
-
-function create_vm_spec_kvm_image_import(){
-
-  # Required:
-  # $importedUUID
-
-  # Create KVM VM from Imported Image
-  vmadm create << EOF
-{
-  "brand": "kvm",
-  "resolvers": [
-    "$DNS_PRIMARY",
-    "$DNS_SECONDARY"
-  ],
-  "ram": "$RAM",
-  "max_locked_memory": "$RAM_MAX",
-  "vcpus": "$VCPU",
-  "nics": [
-    {
-      "nic_tag": "admin",
-      "model": "virtio",
-      "ip": "dhcp",
-      "primary": true
-    }
-  ],
-  "disks": [
-    {
-      "image_uuid": "$importedUUID",
-      "boot": true,
-      "model": "virtio"
-    }
-  ]
-}
-EOF
-
-}
 
 
 
@@ -975,18 +1229,20 @@ EOF
 pre_check
 
 echo "How would you like to create your VM today?"
-select ANSWER in "Just the simple essentials!" "I want to see all the options!"; do
+select ANSWER in "Just the simple essentials!" "I want to see all the options! (Under development)"; do
     case $ANSWER in
-        "Just the simple essentials!") _EasyTiger EASY
+        "Just the simple essentials!")
+          _EasyTiger EASY
         # Choose VM type
         # Choose DHCP or Static, nic tag
         #
-        ;;
-        "I want to see all the options!") _EasyTiger HARD
+          return $? ;;
+        "I want to see all the options! (Under development)")
+          _EasyTiger HARD
         # Choose VM type
         # Choose DHCP or Static, phys, nic tag, interface, etherstub, vnic
         #  - all ipadm ifprop, addrprop, and prop
         #
-        ;;
+          return $? ;;
     esac
 done
