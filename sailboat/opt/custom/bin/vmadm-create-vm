@@ -7,8 +7,8 @@
 #  type of VM I was creating
 #
 #
-# alpha0.1
-# 0xB4AE7C4C
+# alpha1.0
+# 0xB4AE7C4C Eric Jaw
 #
 
 
@@ -858,7 +858,8 @@ function spec_kvm_iso_copy(){
 function spec_nics(){
 
   #  global: interface
-  #    Name of the interface within the VM ("eth0")
+  #    Name of the interface within the VM ("net0")
+  #    This is also set automatically
   #
   #  global: nic_tag
   #    nic_tag or interface name that the virtual NIC is attached to
@@ -894,6 +895,7 @@ function spec_nics(){
 
   INTERFACE_default=net0
   NICTAG_default=external
+  MTU_default=1500
   IPADDRESS_default=unset
   GATEWAY_default=unset
   NETMASK_default=unset
@@ -902,9 +904,9 @@ function spec_nics(){
 
   while true; do
 
-    read -p "Set VM internal NIC name (net0): " INTERFACE
-    if [ -z "$INTERFACE" ]; then INTERFACE=$INTERFACE_default; fi
-    echo ""
+    #read -p "Set VM internal NIC name (net0): " INTERFACE
+    #if [ -z "$INTERFACE" ]; then INTERFACE=$INTERFACE_default; fi
+    #echo ""
 
     echo "Select NIC type to use"
     select ANSWER in "NIC tag (default)" "virtual NIC" "etherstub"; do
@@ -967,6 +969,23 @@ function spec_nics(){
     done
     echo ""
 
+    echo "MTU"
+    select ANSWER in "1500 (default)" "Custom"; do
+      case $ANSWER in
+        "1500 (default)")
+          MTU=1500
+          break ;;
+        "Custom")
+          while true; do
+            read -p "MTU (1500): " MTU
+            if [ -z "$MTU" ]; then MTU=1500; break; fi
+          done
+
+          break ;;
+      esac
+    done
+    echo ""
+
     echo "Set addressing type"
     select ANSWER in "DHCP (default)" "Static"; do
       case $ANSWER in
@@ -1015,8 +1034,9 @@ function spec_nics(){
       echo ""
 
     echo "== Your Configuration =="
-    echo ">> Interface:" "$INTERFACE"
+    #echo ">> Interface:" "$INTERFACE"
     echo ">> NIC Tag:" "$NICTAG"
+    echo ">> MTU:" "$MTU"
     if [ "$BRAND" == kvm ]; then
       echo ">> NIC Model:" "$NICMODEL"; fi
     echo ">> IPv4:" "$IPADDRESS"
@@ -1040,7 +1060,7 @@ function spec_nics(){
       esac
     done
 
-    new_vm_filename "$NICTAG""$INTERFACE"
+    new_vm_filename "$IPADDRESS""$NICTAG"
 
     if [ "$FINISHED" == true ]; then break; fi
   done
@@ -1052,7 +1072,6 @@ function spec_nics(){
       cat >> $TEMP << EOF
   "nics": [
     {
-      "interface": "$INTERFACE",
       "nic_tag": "$NICTAG",
       "ip": "$IPADDRESS",
       "primary": $PRIMARY
@@ -1063,7 +1082,6 @@ EOF
       cat >> $TEMP << EOF
   "nics": [
     {
-      "interface": "$INTERFACE",
       "nic_tag": "$NICTAG",
       "ip": "$IPADDRESS",
       "gateway": "$GATEWAY",
@@ -1080,7 +1098,6 @@ EOF
       cat >> $TEMP << EOF
   "nics": [
     {
-      "interface": "$INTERFACE",
       "nic_tag": "$NICTAG",
       "ip": "$IPADDRESS",
       "primary": $PRIMARY
@@ -1091,7 +1108,6 @@ EOF
       cat >> $TEMP << EOF
   "nics": [
     {
-      "interface": "$INTERFACE",
       "nic_tag": "$NICTAG",
       "ip": "$IPADDRESS",
       "gateway": "$GATEWAY",
@@ -1108,7 +1124,6 @@ EOF
       cat >> $TEMP << EOF
   "nics": [
     {
-      "interface": "$INTERFACE",
       "nic_tag": "$NICTAG",
       "model": "$NICMODEL",
       "ip": "$IPADDRESS",
@@ -1120,7 +1135,6 @@ EOF
       cat >> $TEMP << EOF
   "nics": [
     {
-      "interface": "$INTERFACE",
       "nic_tag": "$NICTAG",
       "model": "$NICMODEL",
       "ip": "$IPADDRESS",
