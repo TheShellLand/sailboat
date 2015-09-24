@@ -59,7 +59,7 @@ function choose_vm_type(){
     case $BRAND in
       "OS - Native, allows RAM over provisioning")
         echo ""
-        create_vm os
+        create_vm joyent
 
         break ;;
       "LX - Native, runs linux flavors, yum")
@@ -87,9 +87,9 @@ function create_vm(){
   export BRAND
   new_vm_filename $BRAND
 
-  if [ "$BRAND" == "os" ]; then create_vm_os; return $?; fi
-  if [ "$BRAND" == "lx" ]; then create_vm_lx; return $?; fi
-  if [ "$BRAND" == "kvm" ]; then create_vm_kvm; return $?; fi
+  if [ "$BRAND" == joyent ]; then create_vm_os; return $?; fi
+  if [ "$BRAND" == lx ]; then create_vm_lx; return $?; fi
+  if [ "$BRAND" == kvm ]; then create_vm_kvm; return $?; fi
   return $?
 
 }
@@ -119,7 +119,7 @@ function new_vm_filename(){
   CHOMP="$output_sanatized"
 
   if [ "$CHOMP" == "JSONAAAAAA" ]; then VM_FILENAME="$VM_FILENAME".json; export VM_FILENAME
-      export NEW_VM="$SPECS_DIR/$VM_FILENAME"; fi
+      export NEW_VM="$SPECS_DIR/$VM_FILENAME"; return $?; fi
   if [ -z "$CHOMP" ]; then VM_FILENAME=""; export VM_FILENAME; return $?; fi
   if [ -z "$VM_FILENAME" ]; then VM_FILENAME="$CHOMP"; export VM_FILENAME; return $?; fi
   if [ ! -z "$VM_FILENAME" ]; then VM_FILENAME="$VM_FILENAME"__"$CHOMP"; export VM_FILENAME; return $?; fi
@@ -402,7 +402,7 @@ function spec_oslx_image(){
 
   while true; do
     echo ""
-    if [ "$BRAND" == os ]; then
+    if [ "$BRAND" == joyent ]; then
       imgadm list -o uuid,name,version,os,type,published | grep -vw linux | grep -vw bsd | grep -vw other | grep -vw lx-dataset; fi
 
     if [ "$BRAND" == lx ]; then
@@ -822,6 +822,7 @@ function spec_kvm_iso_copy(){
   select ANSWER in "Yes" "No"; do
     case $ANSWER in
       Yes)
+        echo ""
         echo "Attach virtio ISO?"
         select ANSWER in "Yes" "No"; do
           case $ANSWER in
@@ -1039,7 +1040,7 @@ function spec_nics(){
   echo ""
 
   # JSON
-  if [ "$BRAND" == os ]; then
+  if [ "$BRAND" == joyent ]; then
   cat >> $TEMP << EOF
   "nics": [
     {
@@ -1172,6 +1173,7 @@ function os(){
   spec_oslx_ram
   spec_oslx_cpu
   spec_oslx_disk
+  spec_oslx_image
   spec_nics
   spec_dns
   spec_end
@@ -1190,6 +1192,7 @@ function lx(){
   spec_oslx_ram
   spec_oslx_cpu
   spec_oslx_disk
+  spec_oslx_image
   spec_nics
   spec_dns
   spec_end
@@ -1235,11 +1238,29 @@ function vmadm_create(){
 
 }
 
+function info(){
+
+  while true; do
+    read -p "Enter new VM UUID: " INFO
+    vmadm list | grep -w "$INFO" 2>/dev/null >/dev/null
+    if [ $? == 0 ]; then
+        #if [ "$BRAND" == joyent ]; then vmadm get $INFO | json nics; fi
+        #if [ "$BRAND" == lx ]; then vmadm get $INFO | json nics; fi
+        if [ "$BRAND" == kvm ]; then vmadm info $INFO vnc
+        break; fi
+      else echo "UUID not found. Please check spelling and try again"; fi
+  done
+  echo ""
+  return $?
+
+}
+
 function create_vm_os(){
 
   os
   vmadm_validate
   vmadm_create
+  info
   return $?
 
 }
@@ -1249,6 +1270,7 @@ function create_vm_lx(){
   lx
   vmadm_validate
   vmadm_create
+  info
   return $?
 
 }
@@ -1269,7 +1291,7 @@ function create_vm_kvm(){
       No) break ;;
     esac
   done
-
+  info
   return $?
 
 }
