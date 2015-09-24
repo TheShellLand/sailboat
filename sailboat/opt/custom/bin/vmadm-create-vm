@@ -29,6 +29,7 @@ function pre_check(){
   export SPECS_DIR
   echo "[*] New specs located in: $SPECS_DIR"
   if [ ! -d "$SPECS_DIR" ]; then mkdir -p "$SPECS_DIR"; fi
+  echo ""
 
   # New temp file
   pre_check_temp
@@ -39,7 +40,7 @@ function pre_check(){
 function pre_check_temp(){
 
   # New temp filename
-  TEMPSPEC="$(uuid).temp.json"
+  TEMPSPEC="$(uuid).json"
   export TEMPSPEC
   TEMP="$SPECS_DIR/$TEMPSPEC"
   export TEMP
@@ -125,6 +126,15 @@ function new_vm_filename(){
 }
 
 
+function spec_init(){
+
+  cat >> $TEMP << EOF
+{
+EOF
+  return $?
+
+}
+
 function spec_brand(){
 
   #  global: brand
@@ -149,7 +159,7 @@ function spec_alias(){
 
   default=$(date +%s)
 
-  read -p "Set VM name (epoch: $default): " ALIAS
+  read -p "Set VM alias (epoch: $default): " ALIAS
   if [ -z "$ALIAS" ]; then ALIAS=created-$default; fi
   echo ""
   
@@ -569,9 +579,9 @@ function spec_kvm_disk(){
   echo ""
 
   echo "Will this be the boot disk?"
-  select BOOTABLE in "Yes" "No"; do
+  select BOOTABLE in "Yes (default)" "No"; do
     case $BOOTABLE in
-      Yes) 
+      "Yes (default)")
         BOOTABLE=true
       
         break ;;
@@ -728,13 +738,13 @@ function spec_kvm_disk(){
   # JSON
   if [ "$KVM_DISK_TYPE" == blank ]; then
     cat >> $TEMP << EOF
+  "quota": "$QUOTA",
   "disks": [
     {
       "boot": $BOOTABLE,
       "model": "$DISK_MODEL",
       "compression": "$COMPRESSION",
-      "size": $DISK_SIZE,
-      "quota": "$QUOTA"
+      "size": $DISK_SIZE
       }
   ],
 EOF
@@ -743,6 +753,7 @@ EOF
   # JSON
   if [ "$KVM_DISK_TYPE" == image ]; then
     cat >> $TEMP << EOF
+  "quota": "$QUOTA",
   "disks": [
     {
       "boot": $BOOTABLE,
@@ -750,8 +761,7 @@ EOF
       "compression": "$COMPRESSION",
       "image_uuid": "$IMAGE_UUID",
       "image_name": "$IMAGE_NAME",
-      "image_size": $IMAGE_SIZE,
-      "quota": "$QUOTA"
+      "image_size": $IMAGE_SIZE
       }
   ],
 EOF
@@ -891,6 +901,7 @@ function spec_nics(){
       case $ANSWER in
         "NIC tag (default)")
           while true; do
+            echo ""
             nictagadm list | head -1; nictagadm list | grep normal
             read -p "Set NIC tag for traffic to go over (external): " NICTAG
             if [ -z "$NICTAG" ]; then NICTAG=$NICTAG_default; fi
@@ -903,6 +914,7 @@ function spec_nics(){
           break ;;
         "virtual NIC")
           while true; do
+            echo ""
             dladm show-vnic
             read -p "Set virtual NIC: " NICTAG
             if [ -z "$NICTAG" ]; then echo "You must enter in a virtual NIC"; sleep 2
@@ -915,6 +927,7 @@ function spec_nics(){
           break ;;
         etherstub)
           while true; do
+            echo ""
             dladm show-etherstub
             read -p "Set etherstub: " NICTAG
             if [ -z "$NICTAG" ]; then echo "You must enter an etherstub"; sleep 2
@@ -1079,6 +1092,7 @@ EOF
       "No (default)") break ;;
     esac
   done
+  echo ""
   return $?
 
 }
@@ -1130,13 +1144,23 @@ function spec_dns(){
   ]
 EOF
   echo "[*] DNS: $DNS_PRIMARY, $DNS_SECONDARY"
+  echo ""
   return $?
 
 }
 
+function spec_end(){
+
+  cat >> $TEMP << EOF
+}
+EOF
+  return $?
+
+}
 
 function os(){
 
+  spec_init
   spec_brand
   spec_alias
   spec_hostname
@@ -1146,12 +1170,14 @@ function os(){
   spec_oslx_disk
   spec_nics
   spec_dns
+  spec_end
   return $?
 
 }
 
 function lx(){
 
+  spec_init
   spec_brand
   spec_alias
   spec_hostname
@@ -1162,12 +1188,14 @@ function lx(){
   spec_oslx_disk
   spec_nics
   spec_dns
+  spec_end
   return $?
 
 }
 
 function kvm(){
 
+  spec_init
   spec_brand
   spec_alias
   spec_hostname
@@ -1177,6 +1205,7 @@ function kvm(){
   spec_kvm_disk
   spec_nics
   spec_dns
+  spec_end
   return $?
 
 }
@@ -1187,8 +1216,8 @@ function vmadm_validate(){
   # Validates the new vm spec before renaming to $VM_FILENAME
   vmadm validate create -f "$TEMP" >/dev/null 2>/dev/null
   # exit code check
-  if [ $? == 0 ]; then echo "[*] JSON Validated"; mv "$TEMP" "$NEW_VM"; break; fi
-  if [ $? -gt 0 ]; then echo "[ERROR] Validating $TEMPSPEC"; exit 0; fi
+  if [ $? == 0 ]; then echo "[*] JSON Validated"; mv "$TEMP" "$NEW_VM"
+    else echo "[ERROR] Validating $TEMPSPEC"; exit 1; fi
   return $?
 
 }
@@ -1196,7 +1225,7 @@ function vmadm_validate(){
 function vmadm_create(){
 
   # Create VM from $TEMP
-  vmadm create -f "$TEMP"
+  vmadm create -f "$NEW_VM"
   return $?
 
 }
@@ -1286,24 +1315,26 @@ T1MgVGVybWluYWwKCgoK'\
 
 # MAIN
 
-pre_check
 happy_term
+pre_check
 
-echo "How would you like to create your VM today?"
-select ANSWER in "Just the simple essentials!" "I want to see all the options! (Under development)"; do
-    case $ANSWER in
-        "Just the simple essentials!")
-          _EasyTiger EASY
-        # Choose VM type
-        # Choose DHCP or Static, nic tag
-        #
-          return $? ;;
-        "I want to see all the options! (Under development)")
-          _EasyTiger HARD
-        # Choose VM type
-        # Choose DHCP or Static, phys, nic tag, interface, etherstub, vnic
-        #  - all ipadm ifprop, addrprop, and prop
-        #
-          return $? ;;
-    esac
-done
+choose_vm_type
+
+#echo "How would you like to create your VM today?"
+#select ANSWER in "Just the simple essentials!" "I want to see all the options! (Under development)"; do
+#    case $ANSWER in
+#        "Just the simple essentials!")
+#          _EasyTiger EASY
+#        # Choose VM type
+#        # Choose DHCP or Static, nic tag
+#        #
+#          return $? ;;
+#        "I want to see all the options! (Under development)")
+#          _EasyTiger HARD
+#        # Choose VM type
+#        # Choose DHCP or Static, phys, nic tag, interface, etherstub, vnic
+#        #  - all ipadm ifprop, addrprop, and prop
+#        #
+#          return $? ;;
+#    esac
+#done
