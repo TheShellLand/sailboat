@@ -5,6 +5,9 @@
 # You could run the commands separately, or just use this and tell it the UUID
 # and it'll do the rest for you
 #
+# alpha0.2
+# 0xB4AE7C4C Eric Jaw
+#
 
 
 function startvm(){
