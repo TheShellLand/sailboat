@@ -1179,17 +1179,17 @@ function spec_nics(){
 
     echo "[!] Your Configuration"
     #echo ">> Interface:" "$INTERFACE"
-    echo "{*} NIC Tag:" "$NICTAG"
-    echo "{*} MTU:" "$MTU"
-    if [ "$BRAND" == kvm ]; then echo "{*} NIC Model:" "$NICMODEL"; fi
-    echo "{*} IPv4:" "$IPADDRESS"
-    if [ ! "$IPADDRESS" == dhcp ]; then echo "{*} Gateway:" "$GATEWAY"; fi
-    if [ ! "$IPADDRESS" == dhcp ]; then echo "{*} Netmask:" "$NETMASK"; fi
-    echo "{*} Primary NIC:" "$PRIMARY"
-    if [ ! -z "$DHCP" ]; then echo "{*} DHCP Spoofing: " "$DHCP"; fi
-    if [ ! -z "$DHCP_SPOOF" ]; then echo "{*} DHCP Spoofing: " "$DHCP_SPOOF"; fi
-    if [ ! -z "$IP_SPOOF" ]; then echo "{*} IP Spoofing: " "$IP_SPOOF"; fi
-    if [ ! -z "$MAC_SPOOF" ]; then echo "{*} MAC Spoofing: " "$MAC_SPOOF"; fi
+    echo "{-} NIC Tag:" "$NICTAG"
+    #echo "{-} MTU:" "$MTU"
+    if [ "$BRAND" == kvm ]; then echo "{-} NIC Model:" "$NICMODEL"; fi
+    echo "{-} IPv4:" "$IPADDRESS"
+    if [ ! "$IPADDRESS" == dhcp ]; then echo "{-} Gateway:" "$GATEWAY"; fi
+    if [ ! "$IPADDRESS" == dhcp ]; then echo "{-} Netmask:" "$NETMASK"; fi
+    echo "{-} Primary NIC:" "$PRIMARY"
+    if [ ! -z "$DHCP" ]; then echo "{-} DHCP Spoofing: " "$DHCP"; fi
+    if [ ! -z "$DHCP_SPOOF" ]; then echo "{-} DHCP Spoofing: " "$DHCP_SPOOF"; fi
+    if [ ! -z "$IP_SPOOF" ]; then echo "{-} IP Spoofing: " "$IP_SPOOF"; fi
+    if [ ! -z "$MAC_SPOOF" ]; then echo "{-} MAC Spoofing: " "$MAC_SPOOF"; fi
 
 
     echo ""
@@ -1211,7 +1211,6 @@ function spec_nics(){
 
     if [ "$FINISHED" == true ]; then break; fi
   done
-  echo ""
 
 
 
