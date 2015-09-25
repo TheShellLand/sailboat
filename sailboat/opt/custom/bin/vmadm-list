@@ -4,8 +4,8 @@
 # Prints a list of VMs including its nic address
 #
 #
-# alpha0.1
-# 0xB4AE7C4C
+# alpha0.2
+# 0xB4AE7C4C Eric Jaw
 #
 
-vmadm list -o uuid,type,ram,state,nics.0.ip,alias -s alias
+vmadm list -o uuid,type,ram,state,nics.0.ip,hostname,alias -s alias
