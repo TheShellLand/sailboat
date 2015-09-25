@@ -39,7 +39,7 @@ vmadm update $UUID <<EOF
 {
   "add_nics": [
     {
-      "nic_tag": "$NIC_TAG",
+      "nic_tag": "$NICTAG",
       "ip": "$IP",
       "gateway": "$GATEWAY",
       "netmask": "$NETMASK",
