@@ -1481,9 +1481,14 @@ function info(){
     vmadm start "$UUID"
     while true; do
       echo "[*] Awaiting network"
-      if [ "$BRAND" == joyent ]; then zlogin "$UUID" ipadm show-addr; fi
-      if [ "$BRAND" == lx ]; then zlogin "$UUID" ip a; fi
-      if [ "$BRAND" == kvm ]; then vmadm info "$UUID" vnc; fi
+      if [ "$BRAND" == joyent ]; then
+        zlogin "$UUID" ipadm show-addr
+        zlogin "$UUID" netstat -r; fi
+      if [ "$BRAND" == lx ]; then
+        zlogin "$UUID" ip a
+        zlogin "$UUID" netstat -r; fi
+      if [ "$BRAND" == kvm ]; then
+        vmadm info "$UUID" vnc; fi
       echo ""
       read -p "Press enter to refresh network lookup, or ^C to exit"
     done
