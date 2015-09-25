@@ -857,6 +857,8 @@ function spec_kvm_iso_copy(){
 
 function spec_nics(){
 
+  ### All properties also follow nic.*.<property>
+  #
   #  global: interface
   #    Name of the interface within the VM ("net0")
   #    This is also set automatically
@@ -882,15 +884,48 @@ function spec_nics(){
   #  global: primary
   #    Sets this NICs gateway as the default gw
   #
-  #  global: dhcp_server
-  #    Allow the VM on this NIC to act as a DHCP Server
+  ### Advanced nic configuration ###
   #
-  #  allow_dhcp_spoofing
-  #  allow_ip_spoofing
-  #  allow_mac_spoofing
-  #  allow_restricted_traffic
-  #  allow_unfiltered_promisc
-  #  blocked_outgoing_ports
+  #  global: allow_dhcp_spoofing
+  #    With this property set to true, this VM will be able to operate as a
+  #    DHCP server on this interface.  Without this, some of the packets
+  #    required of a DHCP server will not get through.
+  #  
+  #  global: allow_ip_spoofing
+  #    With this property set to true, this VM will be able to send and
+  #    receive packets over this nic that don't match the IP address
+  #    specified by the ip property.
+  #
+  #  global: allow_mac_spoofing
+  #     With this property set to true, this VM will be able to send packets
+  #     from this nic with MAC addresses that don't match the mac property.
+  #
+  #  global: allow_restricted_traffic
+  #     With this property set to true, this VM will be able to send
+  #     restricted network traffic (packets that are not IPv4, IPv6, or ARP)
+  #     from this nic.
+  #
+  #  KVM: allow_unfiltered_promisc
+  #    With this property set to true, this VM will be able to have multiple
+  #    MAC addresses (eg. running SmartOS with VNICs).  Without this option
+  #    these packets will not be picked up as only those unicast packets
+  #    destined for the VNIC's MAC will get through.  Warning: do not enable
+  #    this option unless you fully understand the security implications.
+  #
+  #  global: blocked_outgoing_ports
+  #    Array of ports on which this nic is prevented from sending traffic.
+  #
+  #  global: allowed_ips
+  #    This sets additional IP addresses from which this nic is allowed to
+  #    send traffic, in addition to the IPs in the ip and vrrp_primary_ip
+  #    properties (if set). Values can be either single IPv4 Addresses or
+  #    CIDR ranges in the form 192.168.1.0/24.
+  #
+  #  global: dhcp_server
+  #    With this property set to true, this VM will be able to operate as a
+  #    DHCP server on this interface.  Without this, some of the packets
+  #    required of a DHCP server will not get through.
+
 
 
   INTERFACE_default=net0
@@ -902,14 +937,16 @@ function spec_nics(){
   PRIMARY_default=unset
 
 
-  while true; do
 
+  while true; do
+  
+    # Removing this in future release, since interface is can be automatically created
     #read -p "Set VM internal NIC name (net0): " INTERFACE
     #if [ -z "$INTERFACE" ]; then INTERFACE=$INTERFACE_default; fi
     #echo ""
 
     echo "Select NIC type to use"
-    select ANSWER in "NIC tag (default)" "virtual NIC" "etherstub"; do
+    select ANSWER in "NIC tag (default)" "etherstub"; do
       case $ANSWER in
         "NIC tag (default)")
           while true; do
@@ -924,19 +961,20 @@ function spec_nics(){
           done
 
           break ;;
-        "virtual NIC")
-          while true; do
-            echo ""
-            dladm show-vnic
-            read -p "Set virtual NIC: " NICTAG
-            if [ -z "$NICTAG" ]; then echo "You must enter in a virtual NIC"; sleep 2
-              else dladm show-vnic | grep -w "$NICTAG" 2>/dev/null >/dev/null
-                if [ "$?" == 0 ]; then break
-                  else echo "Virtual NIC not found. Check spelling and try again"; fi
-            fi
-          done
-
-          break ;;
+          # Removing VNICS, SmartOS only allows nic tags and etherstubs
+#        "virtual NIC")
+#          while true; do
+#            echo ""
+#            dladm show-vnic
+#            read -p "Set virtual NIC: " NICTAG
+#            if [ -z "$NICTAG" ]; then echo "You must enter in a virtual NIC"; sleep 2
+#              else dladm show-vnic | grep -w "$NICTAG" 2>/dev/null >/dev/null
+#                if [ "$?" == 0 ]; then break
+#                  else echo "Virtual NIC not found. Check spelling and try again"; fi
+#            fi
+#          done
+##
+#          break ;;
         etherstub)
           while true; do
             echo ""
@@ -954,20 +992,24 @@ function spec_nics(){
     done
     echo ""
 
-    echo "Set NIC as default gw?"
-    select ANSWER in "Yes (default)" "No"; do
-      case $ANSWER in
-        "Yes (default)")
-          PRIMARY=true
-          
-          break ;;
-        "No")
-          PRIMARY=false
-          
-          break ;;
-      esac
-    done
-    echo ""
+    if [ -z "$PRIMARY_count" ]; then
+      echo "Set NIC as default gw?"
+      select ANSWER in "Yes (default)" "No"; do
+        case $ANSWER in
+          "Yes (default)")
+            PRIMARY=true
+            let PRIMARY_count++
+            break ;;
+          "No")
+            PRIMARY=false
+
+            break ;;
+        esac
+      done
+      echo ""
+    else
+      PRIMARY=false
+    fi
 
     echo "MTU"
     select ANSWER in "1500 (default)" "Custom"; do
@@ -1017,21 +1059,66 @@ function spec_nics(){
       echo "Choose NIC Model: (virtio: best performance, but needs drivers; e1000 & rtl8139: more universal) "
       select ANSWER in "virtio (default)" "e1000" "rtl8139"; do
         case $ANSWER in
-          "virtio (default)") 
+          "virtio (default)")
             NICMODEL="virtio"
-            
+
             break ;;
-          e1000) 
+          e1000)
             NICMODEL="e1000"
-            
+
             break ;;
-          rtl8139) 
+          rtl8139)
             NICMODEL="rtl8139"
-            
+
             break ;;
         esac
       done; fi
       echo ""
+
+    ### Advanced nic configurations ###
+
+  #  global: allow_dhcp_spoofing
+  #    With this property set to true, this VM will be able to operate as a
+  #    DHCP server on this interface.  Without this, some of the packets
+  #    required of a DHCP server will not get through.
+  #
+  #  global: allow_ip_spoofing
+  #    With this property set to true, this VM will be able to send and
+  #    receive packets over this nic that don't match the IP address
+  #    specified by the ip property.
+  #
+  #  global: allow_mac_spoofing
+  #     With this property set to true, this VM will be able to send packets
+  #     from this nic with MAC addresses that don't match the mac property.
+  #
+  #  global: allow_restricted_traffic
+  #     With this property set to true, this VM will be able to send
+  #     restricted network traffic (packets that are not IPv4, IPv6, or ARP)
+  #     from this nic.
+  #
+  #  KVM: allow_unfiltered_promisc
+  #    With this property set to true, this VM will be able to have multiple
+  #    MAC addresses (eg. running SmartOS with VNICs).  Without this option
+  #    these packets will not be picked up as only those unicast packets
+  #    destined for the VNIC's MAC will get through.  Warning: do not enable
+  #    this option unless you fully understand the security implications.
+  #
+  #  global: blocked_outgoing_ports
+  #    Array of ports on which this nic is prevented from sending traffic.
+  #
+  #  global: allowed_ips
+  #    This sets additional IP addresses from which this nic is allowed to
+  #    send traffic, in addition to the IPs in the ip and vrrp_primary_ip
+  #    properties (if set). Values can be either single IPv4 Addresses or
+  #    CIDR ranges in the form 192.168.1.0/24.
+  #
+  #  global: dhcp_server
+  #    With this property set to true, this VM will be able to operate as a
+  #    DHCP server on this interface.  Without this, some of the packets
+  #    required of a DHCP server will not get through.
+
+
+    ### END Advanced nic configurations ###
 
     echo "== Your Configuration =="
     #echo ">> Interface:" "$INTERFACE"
@@ -1045,6 +1132,9 @@ function spec_nics(){
     if [ ! "$IPADDRESS" == dhcp ]; then
       echo ">> Netmask:" "$NETMASK"; fi
     echo ">> Primary NIC:" "$PRIMARY"
+
+
+
     echo ""
     echo "Confirm?"
     select ANSWER in "Done" "There's something wrong"; do
@@ -1066,29 +1156,32 @@ function spec_nics(){
   done
   echo ""
 
+
+
+  # JSON
+  if [ -z $1 ]; then
+cat >> $TEMP << EOF
+  "nics": [
+EOF
+  fi
+
   # JSON
   if [ "$BRAND" == joyent ]; then
     if [ "$IPADDRESS" == dhcp ]; then
       cat >> $TEMP << EOF
-  "nics": [
     {
       "nic_tag": "$NICTAG",
       "ip": "$IPADDRESS",
       "primary": $PRIMARY
-    }
-  ],
 EOF
     else
       cat >> $TEMP << EOF
-  "nics": [
     {
       "nic_tag": "$NICTAG",
       "ip": "$IPADDRESS",
       "gateway": "$GATEWAY",
       "netmask": "$NETMASK",
       "primary": $PRIMARY
-    }
-  ],
 EOF
   fi; fi
 
@@ -1096,25 +1189,19 @@ EOF
   if [ "$BRAND" == lx ]; then
     if [ "$IPADDRESS" == dhcp ]; then
       cat >> $TEMP << EOF
-  "nics": [
     {
       "nic_tag": "$NICTAG",
       "ip": "$IPADDRESS",
       "primary": $PRIMARY
-    }
-  ],
 EOF
     else
       cat >> $TEMP << EOF
-  "nics": [
     {
       "nic_tag": "$NICTAG",
       "ip": "$IPADDRESS",
       "gateway": "$GATEWAY",
       "netmask": "$NETMASK",
       "primary": $PRIMARY
-    }
-  ],
 EOF
   fi; fi
 
@@ -1122,18 +1209,14 @@ EOF
   if [ "$BRAND" == kvm ]; then
     if [ "$IPADDRESS" == dhcp ]; then
       cat >> $TEMP << EOF
-  "nics": [
     {
       "nic_tag": "$NICTAG",
       "model": "$NICMODEL",
       "ip": "$IPADDRESS",
       "primary": $PRIMARY
-    }
-  ],
 EOF
     else
       cat >> $TEMP << EOF
-  "nics": [
     {
       "nic_tag": "$NICTAG",
       "model": "$NICMODEL",
@@ -1141,16 +1224,25 @@ EOF
       "gateway": "$GATEWAY",
       "netmask": "$NETMASK",
       "primary": $PRIMARY
-    }
-  ],
 EOF
   fi; fi
 
   echo "Add another NIC?"
   select ANSWER in "Yes" "No (default)"; do
     case $ANSWER in
-      "Yes") spec_nics; break ;;
-      "No (default)") break ;;
+      "Yes")
+        cat >> $TEMP << EOF
+    },
+EOF
+        echo ""
+        spec_nics 1
+        break ;;
+      "No (default)")
+        cat >> $TEMP << EOF
+    }
+  ],
+EOF
+        break ;;
     esac
   done
   echo ""
@@ -1171,30 +1263,30 @@ function spec_dns(){
 
   echo "Select a DNS"
   select DNS in "8.8.8.8, 8.8.4.4" "Custom"; do
-      case $DNS in
-        "8.8.8.8, 8.8.4.4") 
-          DNS_PRIMARY="8.8.8.8"; DNS_SECONDARY="8.8.4.4"
-          
-          break ;;
-        Custom)
-          read -p "Set Primary DNS (8.8.8.8): " DNS_PRIMARY
-          read -p "Set Secondary DNS (8.8.4.4): " DNS_SECONDARY
+    case $DNS in
+      "8.8.8.8, 8.8.4.4")
+        DNS_PRIMARY="8.8.8.8"; DNS_SECONDARY="8.8.4.4"
 
-          if [ -z "$DNS_PRIMARY" ]; then DNS_PRIMARY="${default[0]}"; fi
-          if [ -z "$DNS_SECONDARY" ]; then DNS_SECONDARY="${default[1]}"; fi
+        break ;;
+      Custom)
+        read -p "Set Primary DNS (8.8.8.8): " DNS_PRIMARY
+        read -p "Set Secondary DNS (8.8.4.4): " DNS_SECONDARY
 
-          # Input sanitization
-          #      while true; do
-          #      read -p "Set Primary DNS: " DNS_PRIMARY
-          #      read -p "Set Secondary DNS: " DNS_SECONDARY
-          #
-          #      echo "$DNS_PRIMARY" | grep -E "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
-          #      echo "$DNS_SECONDARY" | grep -E "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
-          #
-          #      break
-          #      done
-          break ;;
-      esac
+        if [ -z "$DNS_PRIMARY" ]; then DNS_PRIMARY="${default[0]}"; fi
+        if [ -z "$DNS_SECONDARY" ]; then DNS_SECONDARY="${default[1]}"; fi
+
+        # Input sanitization
+        #      while true; do
+        #      read -p "Set Primary DNS: " DNS_PRIMARY
+        #      read -p "Set Secondary DNS: " DNS_SECONDARY
+        #
+        #      echo "$DNS_PRIMARY" | grep -E "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
+        #      echo "$DNS_SECONDARY" | grep -E "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
+        #
+        #      break
+        #      done
+        break ;;
+    esac
   done
   echo ""
 
