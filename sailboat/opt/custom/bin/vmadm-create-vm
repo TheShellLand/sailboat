@@ -645,6 +645,7 @@ function spec_kvm_disk(){
   done  
   echo ""
 
+
   if [ "$KVM_DISK_TYPE" == blank ]; then
   echo "Select disk size (in MB)"
   select DISK_SIZE in "5120" "10240" "20480" "30720" "40960" "Custom"; do
@@ -738,25 +739,28 @@ function spec_kvm_disk(){
   echo ""
 
   # JSON
-  if [ "$KVM_DISK_TYPE" == blank ]; then
+  if [ -z "$1" ]; then
     cat >> $TEMP << EOF
   "quota": "$QUOTA",
   "disks": [
+EOF
+  fi
+
+
+  # JSON
+  if [ "$KVM_DISK_TYPE" == blank ]; then
+    cat >> $TEMP << EOF
     {
       "boot": $BOOTABLE,
       "model": "$DISK_MODEL",
       "compression": "$COMPRESSION",
       "size": $DISK_SIZE
-    }
-  ],
 EOF
   fi
 
   # JSON
   if [ "$KVM_DISK_TYPE" == image ]; then
     cat >> $TEMP << EOF
-  "quota": "$QUOTA",
-  "disks": [
     {
       "boot": $BOOTABLE,
       "model": "$DISK_MODEL",
@@ -764,18 +768,25 @@ EOF
       "image_uuid": "$IMAGE_UUID",
       "image_name": "$IMAGE_NAME",
       "image_size": $IMAGE_SIZE
-    }
-  ],
 EOF
   fi
 
   echo "Add another Disk?"
   select ANSWER in "Yes" "No (default)"; do
     case $ANSWER in
-      "Yes") spec_kvm_disk
-      
-      break ;;
-      "No (default)") break ;;
+      "Yes")
+        cat >> $TEMP << EOF
+    },
+EOF
+        echo ""
+        spec_kvm_disk 1
+        break ;;
+      "No (default)")
+        cat >> $TEMP << EOF
+    }
+  ],
+EOF
+        break ;;
     esac
   done
   echo ""
@@ -1159,7 +1170,7 @@ function spec_nics(){
 
 
   # JSON
-  if [ -z $1 ]; then
+  if [ -z "$1" ]; then
 cat >> $TEMP << EOF
   "nics": [
 EOF
