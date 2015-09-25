@@ -1131,18 +1131,18 @@ function spec_nics(){
 
     ### END Advanced nic configurations ###
 
-    echo "== Your Configuration =="
+    echo "[!] Your Configuration"
     #echo ">> Interface:" "$INTERFACE"
-    echo ">> NIC Tag:" "$NICTAG"
-    echo ">> MTU:" "$MTU"
+    echo "{*} NIC Tag:" "$NICTAG"
+    echo "{*} MTU:" "$MTU"
     if [ "$BRAND" == kvm ]; then
-      echo ">> NIC Model:" "$NICMODEL"; fi
-    echo ">> IPv4:" "$IPADDRESS"
+      echo "{*} NIC Model:" "$NICMODEL"; fi
+    echo "{*} IPv4:" "$IPADDRESS"
     if [ ! "$IPADDRESS" == dhcp ]; then
-    echo ">> Gateway:" "$GATEWAY"; fi
+    echo "{*} Gateway:" "$GATEWAY"; fi
     if [ ! "$IPADDRESS" == dhcp ]; then
-      echo ">> Netmask:" "$NETMASK"; fi
-    echo ">> Primary NIC:" "$PRIMARY"
+      echo "{*} Netmask:" "$NETMASK"; fi
+    echo "{*} Primary NIC:" "$PRIMARY"
 
 
 
