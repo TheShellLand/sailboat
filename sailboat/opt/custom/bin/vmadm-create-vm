@@ -1355,22 +1355,19 @@ function spec_dns(){
         if [ -z "$DNS_PRIMARY" ]; then DNS_PRIMARY="${default[0]}"; fi
         if [ -z "$DNS_SECONDARY" ]; then DNS_SECONDARY="${default[1]}"; fi
 
-        # Input sanitization
-        #      while true; do
-        #      read -p "Set Primary DNS: " DNS_PRIMARY
-        #      read -p "Set Secondary DNS: " DNS_SECONDARY
-        #
-        #      echo "$DNS_PRIMARY" | grep -E "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
-        #      echo "$DNS_SECONDARY" | grep -E "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
-        #
-        #      break
-        #      done
         break ;;
     esac
   done
   echo ""
 
+  while true; do
+    read -p "Enter DNS domain: " DNS_DOMAIN
+    if [ -z "$DNS_DOMAIN" ]; then echo "Please enter a dns domain"
+      else break; fi
+  done
+
   cat >> $TEMP << EOF
+  "dns_domain": "$DNS_DOMAIN",
   "resolvers": [
     "$DNS_PRIMARY",
     "$DNS_SECONDARY"
