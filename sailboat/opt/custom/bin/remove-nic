@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+print '
+ICAgICAgICAgICAgICAvICAgICBcCiAgICAgICAgICAgICAgdnZ2dnZ2diAgL3xf
+Xy98CiAgICAgICAgICAgICAgICAgSSAgIC9PLE8gICB8CiAgICAgICAgICAgICAg
+ICAgSSAvX19fX18gICB8ICAgICAgL3wvfAogICAgICAgICAgICAgICAgSnwvXiBe
+IF4gXCAgfCAgICAvMDAgIHwgICAgXy8vfAogICAgICAgICAgICAgICAgIHxeIF4g
+XiBeIHxXfCAgIHwvXl5cIHwgICAvb28gfAogICAgICAgICAgICAgICAgICBcbV9f
+X21fX3xffCAgICBcbV9tX3wgICBcbW1ffAoKICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICJUb3Rvcm9zIiAoZnJvbSAiTXkgTmVpZ2hib3Ig
+VG90b3JvIikKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAtLS0gRHVrZSBMZWUKIAlBZGQgbmljcwoK' | openssl enc -base64 -d
+
+vmadm list
+echo ""
+read -p "UUID: " UUID
+echo ""
+vmadm get "$UUID" | json nics
+echo ""
+read -p "mac: " MAC
+
+
+vmadm update $UUID <<EOF
+{
+  "remove_nics": [
+      "mac": "$MAC"
+  ]
+}
+EOF
