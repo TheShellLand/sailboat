@@ -1391,11 +1391,10 @@ function spec_ssh(){
         while true; do
           echo ""
           echo "Existing public keys:"
-          for i in `ls /opt/custom/ssh-keys`; do cat "/opt/custom/ssh-keys/$i"; echo ""; done
-          echo ""
-          read -p "Paste public key: " ROOT_AUTHORIZED_KEYS
-          if [ -z "$ROOT_AUTHORIZED_KEYS" ]; then echo "Nothing was entered"
-            else break; fi
+          select ANSWER in $(ls /opt/custom/ssh-keys); do
+            ROOT_AUTHORIZED_KEYS=$(cat "/opt/custom/ssh-keys/$ANSWER")
+            break
+          done
         done
         break ;;
       No) return $? ;;
