@@ -766,8 +766,7 @@ EOF
       "model": "$DISK_MODEL",
       "compression": "$COMPRESSION",
       "image_uuid": "$IMAGE_UUID",
-      "image_name": "$IMAGE_NAME",
-      "image_size": $IMAGE_SIZE
+      "image_name": "$IMAGE_NAME"
 EOF
   fi
 
@@ -1360,14 +1359,14 @@ function spec_dns(){
   done
   echo ""
 
-  while true; do
-    read -p "Enter DNS domain: " DNS_DOMAIN
-    if [ -z "$DNS_DOMAIN" ]; then echo "Please enter a dns domain"
-      else break; fi
-  done
+#  while true; do
+#    read -p "Enter DNS domain: " DNS_DOMAIN
+#    if [ -z "$DNS_DOMAIN" ]; then echo "Please enter a dns domain"
+#      else break; fi
+#  done
+#  "dns_domain": "$DNS_DOMAIN",
 
   cat >> $TEMP << EOF
-  "dns_domain": "$DNS_DOMAIN",
   "resolvers": [
     "$DNS_PRIMARY",
     "$DNS_SECONDARY"
