@@ -8,4 +8,4 @@
 # 0xB4AE7C4C Eric Jaw
 #
 
-vmadm list -o uuid,nics.0.ip,nics.1.ip,nics.2.ip,nics.3.ip,nics.4.ip,nics.5.ip,hostname,alias -s alias
+vmadm list -o uuid,nics.0.ip,nics.1.ip,nics.2.ip,nics.3.ip,hostname,state,alias -s alias
