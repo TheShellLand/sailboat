@@ -1378,6 +1378,38 @@ EOF
 
 }
 
+function spec_ssh(){
+
+  #  global: customer_metadata
+  #    This field allows metadata to be set and associated with this VM. The
+  #    value should be an object with only top-level key=value pairs.
+
+  echo "Add ssh key?"
+  select ANSWER in "Yes" "No"; do
+    case $ANSWER in
+      Yes)
+        while true; do
+          read -p "Paste public key: " ROOT_AUTHORIZED_KEYS
+          if [ -z "$ROOT_AUTHORIZED_KEYS" ]; then echo "Nothing was entered"
+            else break; fi
+        done
+        break ;;
+      No) return $? ;;
+    esac
+  done
+
+
+  cat >> $TEMP << EOF
+  "customer_metadata": {
+    "root_authorized_keys": "$ROOT_AUTHORIZED_KEYS",
+    "user-script" : "/usr/sbin/mdata-get root_authorized_keys > ~root/.ssh/authorized_keys; chmod 600 ~root/.ssh/authorized_keys"
+  },
+EOF
+  return $?
+
+}
+
+
 function spec_end(){
 
   cat >> $TEMP << EOF
@@ -1401,6 +1433,7 @@ function os(){
   spec_oslx_disk
   spec_oslx_image
   spec_nics
+  spec_ssh
   spec_dns
   spec_end
   return $?
@@ -1420,6 +1453,7 @@ function lx(){
   spec_oslx_disk
   spec_oslx_image
   spec_nics
+  spec_ssh
   spec_dns
   spec_end
   return $?
@@ -1437,6 +1471,7 @@ function kvm(){
   spec_kvm_cpu
   spec_kvm_disk
   spec_nics
+  spec_ssh
   spec_dns
   spec_end
   return $?
