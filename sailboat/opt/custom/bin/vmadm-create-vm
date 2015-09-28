@@ -1389,10 +1389,6 @@ function spec_ssh(){
     case $ANSWER in
       Yes)
         while true; do
-          echo ""
-          echo "Existing keys"
-          for i in `ls /opt/custom/ssh-keys`; do cat $i; echo ""; done
-          echo ""
           read -p "Paste public key: " ROOT_AUTHORIZED_KEYS
           if [ -z "$ROOT_AUTHORIZED_KEYS" ]; then echo "Nothing was entered"
             else break; fi
