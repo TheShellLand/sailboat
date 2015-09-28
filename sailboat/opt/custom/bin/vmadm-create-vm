@@ -406,7 +406,7 @@ function spec_oslx_image(){
       imgadm list -o uuid,name,version,os,type,published | grep -vw linux | grep -vw bsd | grep -vw other | grep -vw lx-dataset; fi
 
     if [ "$BRAND" == lx ]; then
-      imgadm list -o uuid,name,version,os,type,published | grep -vw linux | grep -vw bsd | grep -vw smartos; fi
+      imgadm list -o uuid,name,version,os,type,published | grep -w lx-dataset; fi
 
       echo ""
       read -p "Select existing image: " IMAGE_UUID
