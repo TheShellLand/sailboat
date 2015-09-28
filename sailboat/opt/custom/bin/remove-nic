@@ -22,8 +22,6 @@ read -p "mac: " MAC
 
 vmadm update $UUID <<EOF
 {
-  "remove_nics": [
-      "mac": "$MAC"
-  ]
+  "remove_nics": ["$MAC"]
 }
 EOF
