@@ -865,6 +865,31 @@ function spec_kvm_iso_copy(){
 
 }
 
+function kvm_vnc(){
+  
+  #  KVM: vnc_password
+  #    This property allows you to set a password which will be required when
+  #    connecting to the VNC port. IMPORTANT: this password will be visible
+  #    from the GZ of the CN and anyone with access to the serial port in the
+  #    guest. Set to an empty string (default) to not require a password at
+  #    this level.
+  #
+  #     string (8 chars max)
+
+  while true; do
+    read -p "VNC Password (8 chars max): " VNC_PASS
+    if [ -z "$VNC_PASS" ]; then echo ""
+
+  vmadm update "$UUID" <<EOF
+{
+  "vnc_password": "$VNC_PASS"
+}
+EOF
+  return $?
+
+}
+
+
 function spec_nics(){
 
   ### All properties also follow nic.*.<property>
@@ -1507,6 +1532,7 @@ function info(){
 
   while true; do
     read -p "Enter new VM UUID: " UUID
+    export UUID
     vmadm list | grep -w "$UUID" 2>/dev/null >/dev/null
       if [ $? == 0 ]; then break
         else echo "UUID not found. Please check spelling and try again"; fi
@@ -1525,8 +1551,10 @@ function info(){
       if [ "$BRAND" == kvm ]; then
         vmadm info "$UUID" vnc; fi
       echo ""
-      read -p "Press enter to refresh network lookup, or ^C to exit"
+      read -p "Press enter to refresh network lookup, or type quit " ANSWER
+      if [ "$ANSWER" == quit ]; then break; fi
     done
+    break
   done
   echo ""
   return $?
@@ -1570,6 +1598,7 @@ function create_vm_kvm(){
     esac
   done
   info
+  kvm_vnc
   return $?
 
 }
