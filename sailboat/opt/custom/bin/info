@@ -4,9 +4,10 @@
 
 
 function info(){
+  vmadm list -s state
 
   while true; do
-    read -p "Enter new VM UUID: " UUID
+    read -p "Enter VM UUID: " UUID
     export UUID
     vmadm list | grep -w "$UUID" 2>/dev/null >/dev/null
       if [ $? == 0 ]; then break
