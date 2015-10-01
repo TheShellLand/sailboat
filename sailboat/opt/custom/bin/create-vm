@@ -1545,10 +1545,10 @@ function info(){
       echo "[*] Awaiting network"
       if [ "$BRAND" == joyent ]; then
         zlogin "$UUID" ipadm show-addr
-        zlogin "$UUID" netstat -r; fi
+        zlogin "$UUID" netstat -rn; fi
       if [ "$BRAND" == lx ]; then
         zlogin "$UUID" /sbin/ip a
-        zlogin "$UUID" /bin/netstat -r; fi
+        zlogin "$UUID" /bin/netstat -rn; fi
       if [ "$BRAND" == kvm ]; then
         vmadm info "$UUID" vnc; fi
       echo ""
