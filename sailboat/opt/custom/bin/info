@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+
+
+
+
+function info(){
+
+  while true; do
+    read -p "Enter new VM UUID: " UUID
+    export UUID
+    vmadm list | grep -w "$UUID" 2>/dev/null >/dev/null
+      if [ $? == 0 ]; then break
+        else echo "UUID not found. Please check spelling and try again"; fi
+  done
+
+  while true; do
+    vmadm start "$UUID"
+    while true; do
+      echo "[*] Awaiting network"
+      if [ "$BRAND" == joyent ]; then
+        zlogin "$UUID" ipadm show-addr
+        zlogin "$UUID" netstat -rn; fi
+      if [ "$BRAND" == lx ]; then
+        zlogin "$UUID" /sbin/ip a
+        zlogin "$UUID" /bin/netstat -rn; fi
+      if [ "$BRAND" == kvm ]; then
+        vmadm info "$UUID" vnc; fi
+      echo ""
+      read -p "Press enter to refresh network lookup, or type quit " ANSWER
+      if [ "$ANSWER" == quit ]; then break; fi
+    done
+    break
+  done
+  echo ""
+  return $?
+
+}
+
+function pretty_term(){
+
+    print '
+X19fX+KWkuKWkuKWkuKWkuKWkgrigJQt4paS4paS4paS4paS4paS4paS4paS4paS
+4paSCuKAlOKAk+KWk+KWk+KWk+KWkeKWkeKWk+KWkQrigJTilpPilpHilpPilpHi
+lpHilpHilpPilpHilpHilpEK4oCU4paT4paR4paT4paT4paR4paR4paR4paT4paR
+4paR4paRCuKAlOKWk+KWk+KWkeKWkeKWkeKWkeKWk+KWk+KWk+KWkwrigJTigJTi
+lpHilpHilpHilpHilpHilpHilpHilpEK4oCULeKWk+KWk+KWkuKWk+KWk+KWk+KW
+kuKWk+KWkwrigJPilpPilpPilpPilpLilpPilpPilpPilpLilpPilpPilpMK4paT
+4paT4paT4paT4paS4paS4paS4paS4paS4paT4paT4paT4paTICAgICBTaG93IFZN
+IE5JQyBhbmQgcm91dGVzCuKWkeKWkeKWk+KWkuKWkeKWkuKWkuKWkuKWkeKWkuKW
+k+KWkeKWkQrilpHilpHilpHilpLilpLilpLilpLilpLilpLilpLilpHilpHilpEK
+4paR4paR4paS4paS4paS4paS4paS4paS4paS4paS4paS4paR4paRCuKAlC3ilpLi
+lpLilpIg4oCU4oCU4paS4paS4paSCuKAk+KWk+KWk+KWk+KAlOKAlOKAlC3ilpPi
+lpPilpMK4paT4paT4paT4paT4oCU4oCU4oCULeKWk+KWk+KWk+KWkwoK' | openssl enc -base64 -d
+
+}
+
+# main
+
+pretty_term
+info
