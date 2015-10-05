@@ -29,8 +29,10 @@ Vk0gQm9vdGVyCgo=' | \
     while true; do
     read -p "Enter VM UUID: " UUID
     vmadm list | grep -w "$UUID" 2>/dev/null >/dev/null
-      if [ $? == 0 ]; then break
-        else echo "UUID not found. Please check spelling and try again"; fi
+      if [ $? == 0 ]; then
+        BRAND=$(vmadm get "$UUID" | json -a brand)
+        break
+          else echo "UUID not found. Please check spelling and try again"; fi
     done
     echo ""
 
@@ -77,12 +79,6 @@ Vk0gQm9vdGVyCgo=' | \
         esac
     done
     echo ""
-
-    vmadm list | grep -w "$UUID" 2>/dev/null >/dev/null
-      if [ $? == 0 ]; then
-        BRAND=$(vmadm get "$UUID" | json -a brand)
-        break
-          else echo "UUID not found. Please check spelling and try again"; fi
 
     while true; do
         vmadm start "$UUID"
