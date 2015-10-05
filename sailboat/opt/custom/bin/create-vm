@@ -809,10 +809,10 @@ function spec_kvm_iso_copy(){
   if [ ! -d "$VIRTIOS" ]; then mkdir -p "$VIRTIOS"; fi
 
   ls -l "$ISOS" | grep ^[-]
-  if [ $? == 1 ]; then echo "[!] No ISO found in $ISOS !"; echo ""; return $?; fi
+  if [ $? == 1 ]; then echo "[!] No ISO found in $ISOS"; echo ""; return $?; fi
 
   ls -l "$VIRTIOS" | grep ^[-]
-  if [ $? == 1 ]; then echo "[!] No virtio drivers found in $VIRTIOS !"; echo ""; fi
+  if [ $? == 1 ]; then echo "[!] No virtio drivers found in $VIRTIOS"; echo ""; fi
 
   while true; do
     echo ""
@@ -1419,8 +1419,12 @@ function spec_ssh(){
   #    This field allows metadata to be set and associated with this VM. The
   #    value should be an object with only top-level key=value pairs.
 
-  if [   ]; then
-    echo "[*] No ssh keys found in /opt/custom/ssh-keys"; echo ""; return $?; fi
+  SSH=/opt/custom/ssh-keys
+
+  if [ ! -d "$SSH" ]; then mkdir -p "$SSH"; fi
+
+  ls -l "$SSH" | grep ^[-]
+  if [ $? == 1 ]; then echo "[!] No ssh keys found in $SSH"; echo ""; return $?; fi
 
   echo "Add ssh key?"
   select ANSWER in "Yes" "No"; do
@@ -1429,8 +1433,8 @@ function spec_ssh(){
         while true; do
           echo ""
           echo "Existing public keys:"
-          select ANSWER in $(ls /opt/custom/ssh-keys); do
-            ROOT_AUTHORIZED_KEYS=$(cat "/opt/custom/ssh-keys/$ANSWER")
+          select ANSWER in $(ls $SSH); do
+            ROOT_AUTHORIZED_KEYS=$(cat "$SSH/$ANSWER")
             break
           done
           break
