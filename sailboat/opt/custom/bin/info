@@ -20,7 +20,7 @@ function info(){
     vmadm start "$UUID"
     while true; do
       echo "[*] Awaiting network"
-      if [ "$BRAND" == os ]; then
+      if [ "$BRAND" == joyent ]; then
         zlogin "$UUID" ipadm show-addr
         zlogin "$UUID" netstat -rn; fi
       if [ "$BRAND" == lx ]; then
