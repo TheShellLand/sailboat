@@ -4,21 +4,23 @@
 
 
 function info(){
-  vmadm list -s state
+  vmadm list -o uuid,hostname,type,nics.0.nic_tag,nics.1.nic_tag,ram,state,alias -s state
 
   while true; do
     read -p "Enter VM UUID: " UUID
     export UUID
     vmadm list | grep -w "$UUID" 2>/dev/null >/dev/null
-      if [ $? == 0 ]; then break
-        else echo "UUID not found. Please check spelling and try again"; fi
+      if [ $? == 0 ]; then
+        BRAND=$(vmadm get "$UUID" | json -a brand)
+        break
+          else echo "UUID not found. Please check spelling and try again"; fi
   done
 
   while true; do
     vmadm start "$UUID"
     while true; do
       echo "[*] Awaiting network"
-      if [ "$BRAND" == joyent ]; then
+      if [ "$BRAND" == os ]; then
         zlogin "$UUID" ipadm show-addr
         zlogin "$UUID" netstat -rn; fi
       if [ "$BRAND" == lx ]; then
