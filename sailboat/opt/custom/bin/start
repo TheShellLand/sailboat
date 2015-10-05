@@ -36,6 +36,7 @@ Vk0gQm9vdGVyCgo=' | \
     done
     echo ""
 
+    if [ "$BRAND" == kvm ]; then
     echo "Boot from ISO?"
     select ANSWER in "Yes" "No"; do
         case $ANSWER in
@@ -78,6 +79,7 @@ Vk0gQm9vdGVyCgo=' | \
             No) break ;;
         esac
     done
+    fi
     echo ""
 
     while true; do
