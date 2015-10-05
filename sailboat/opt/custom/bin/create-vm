@@ -1556,12 +1556,22 @@ function info(){
     while true; do
       echo "[*] Awaiting network"
       if [ "$BRAND" == joyent ]; then
+        echo ""
+        echo "[*] ipadm show-addr"
         zlogin "$UUID" ipadm show-addr
+        echo ""
+        echo "[*] netstat -rn"
         zlogin "$UUID" netstat -rn; fi
       if [ "$BRAND" == lx ]; then
+        echo ""
+        echo "[*] /sbin/ip a"
         zlogin "$UUID" /sbin/ip a
+        echo ""
+        echo "[*] /bin/netstat -rn"
         zlogin "$UUID" /bin/netstat -rn; fi
       if [ "$BRAND" == kvm ]; then
+        echo ""
+        echo "[*] VNC"
         vmadm info "$UUID" vnc; fi
       echo ""
       read -p "Press enter to refresh network lookup, or type quit " ANSWER
