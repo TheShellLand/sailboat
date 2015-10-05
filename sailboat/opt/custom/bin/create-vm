@@ -805,6 +805,15 @@ function spec_kvm_iso_copy(){
   VIRTIOS=/opt/iso/virtio
   VIRTIO=($(ls "$VIRTIOS" | grep .iso))
 
+  if [ ! -d "$ISOS" ]; then mkdir -p "$ISOS"; fi
+  if [ ! -d "$VIRTIOS" ]; then mkdir -p "$VIRTIOS"; fi
+
+  ls -l "$ISOS" | grep ^[-]
+  if [ $? == 1 ]; then echo "[!] No ISO found in $ISOS !"; echo ""; return $?; fi
+
+  ls -l "$VIRTIOS" | grep ^[-]
+  if [ $? == 1 ]; then echo "[!] No virtio drivers found in $VIRTIOS !"; echo ""; fi
+
   while true; do
     echo ""
     #vmadm list
@@ -1409,6 +1418,9 @@ function spec_ssh(){
   #  global: customer_metadata
   #    This field allows metadata to be set and associated with this VM. The
   #    value should be an object with only top-level key=value pairs.
+
+  if [   ]; then
+    echo "[*] No ssh keys found in /opt/custom/ssh-keys"; echo ""; return $?; fi
 
   echo "Add ssh key?"
   select ANSWER in "Yes" "No"; do
