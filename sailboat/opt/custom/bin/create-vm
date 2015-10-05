@@ -808,10 +808,10 @@ function spec_kvm_iso_copy(){
   if [ ! -d "$ISOS" ]; then mkdir -p "$ISOS"; fi
   if [ ! -d "$VIRTIOS" ]; then mkdir -p "$VIRTIOS"; fi
 
-  ls -l "$ISOS" | grep ^[-]
+  ls -l "$ISOS" | grep ^[-] 2>/dev/null >/dev/null
   if [ $? == 1 ]; then echo "[!] No ISO found in $ISOS"; echo ""; return $?; fi
 
-  ls -l "$VIRTIOS" | grep ^[-]
+  ls -l "$VIRTIOS" | grep ^[-] 2>/dev/null >/dev/null
   if [ $? == 1 ]; then echo "[!] No virtio drivers found in $VIRTIOS"; echo ""; fi
 
   while true; do
@@ -1423,7 +1423,7 @@ function spec_ssh(){
 
   if [ ! -d "$SSH" ]; then mkdir -p "$SSH"; fi
 
-  ls -l "$SSH" | grep ^[-]
+  ls -l "$SSH" | grep ^[-] 2>/dev/null >/dev/null
   if [ $? == 1 ]; then echo "[!] No ssh keys found in $SSH"; echo ""; return $?; fi
 
   echo "Add ssh key?"
