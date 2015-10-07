@@ -1056,21 +1056,21 @@ function spec_nics(){
       PRIMARY=false
     fi
 
-#    echo "MTU"
-#    select ANSWER in "1500 (default)" "Custom"; do
-#      case $ANSWER in
-#        "1500 (default)")
-#          MTU=1500
-#          break ;;
-#        "Custom")
-#          while true; do
-#            read -p "MTU (1500): " MTU
-#            if [ -z "$MTU" ]; then MTU=1500; break; fi
-#          done
-#          break ;;
-#      esac
-#    done
-#    echo ""
+    echo "MTU"
+    select ANSWER in "1500 (default)" "Custom"; do
+      case $ANSWER in
+        "1500 (default)")
+          MTU=1500
+          break ;;
+        "Custom")
+          while true; do
+            read -p "MTU (1500): " MTU
+            if [ -z "$MTU" ]; then MTU=1500; break; fi
+          done
+          break ;;
+      esac
+    done
+    echo ""
 
     echo "Set addressing type"
     select ANSWER in "DHCP (default)" "Static"; do
@@ -1214,7 +1214,7 @@ function spec_nics(){
     echo "[!] Your Configuration"
     #echo ">> Interface:" "$INTERFACE"
     echo "{-} NIC Tag:" "$NICTAG"
-    #echo "{-} MTU:" "$MTU"
+    echo "{-} MTU:" "$MTU"
     if [ "$BRAND" == kvm ]; then echo "{-} NIC Model:" "$NICMODEL"; fi
     echo "{-} IPv4:" "$IPADDRESS"
     if [ ! "$IPADDRESS" == dhcp ]; then echo "{-} Gateway:" "$GATEWAY"; fi
@@ -1261,6 +1261,7 @@ EOF
       cat >> $TEMP << EOF
     {
       "nic_tag": "$NICTAG",
+      "mtu": "$MTU",
       "ip": "$IPADDRESS",
       "dhcp_server": $DHCP,
       "allow_dhcp_spoofing": $DHCP_SPOOF,
@@ -1272,6 +1273,7 @@ EOF
       cat >> $TEMP << EOF
     {
       "nic_tag": "$NICTAG",
+      "mtu": "$MTU",
       "ip": "$IPADDRESS",
       "gateway": "$GATEWAY",
       "netmask": "$NETMASK",
@@ -1289,6 +1291,7 @@ EOF
       cat >> $TEMP << EOF
     {
       "nic_tag": "$NICTAG",
+      "mtu": "$MTU",
       "ip": "$IPADDRESS",
       "dhcp_server": $DHCP,
       "allow_dhcp_spoofing": $DHCP_SPOOF,
@@ -1300,6 +1303,7 @@ EOF
       cat >> $TEMP << EOF
     {
       "nic_tag": "$NICTAG",
+      "mtu": "$MTU",
       "ip": "$IPADDRESS",
       "gateway": "$GATEWAY",
       "netmask": "$NETMASK",
@@ -1317,6 +1321,7 @@ EOF
       cat >> $TEMP << EOF
     {
       "nic_tag": "$NICTAG",
+      "mtu": "$MTU",
       "model": "$NICMODEL",
       "ip": "$IPADDRESS",
       "dhcp_server": $DHCP,
@@ -1329,6 +1334,7 @@ EOF
       cat >> $TEMP << EOF
     {
       "nic_tag": "$NICTAG",
+      "mtu": "$MTU",
       "model": "$NICMODEL",
       "ip": "$IPADDRESS",
       "gateway": "$GATEWAY",
