@@ -25,7 +25,7 @@ ICAgICAgICglJSUpCiAgICAgICAgICAgICAgICAgICAgIQoKICAgIFNtYXJ0T1Mg
 Vk0gQm9vdGVyCgo=' | \
     openssl enc -base64 -d
 
-    vmadm list -s alias
+    vmadm list -s state
     while true; do
     read -p "Enter VM UUID: " UUID
     vmadm list | grep -w "$UUID" 2>/dev/null >/dev/null
