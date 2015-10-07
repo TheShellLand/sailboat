@@ -846,6 +846,7 @@ function spec_kvm_iso_copy(){
         select ANSWER in "Yes" "No"; do
           case $ANSWER in
             Yes)
+              echo ""
               echo "Select virtio iso"
               select ANSWER in "${VIRTIO[@]}"; do
                 VIRTIO="$ANSWER"
@@ -1447,7 +1448,7 @@ function spec_ssh(){
           break
         done
         break ;;
-      No) return $? ;;
+      No) echo ""; return $? ;;
     esac
   done
   echo ""
