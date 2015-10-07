@@ -818,6 +818,7 @@ function spec_kvm_iso_copy(){
     echo ""
     #vmadm list
     read -p "Set UUID of the new VM: " UUID
+    export UUID
     if [ ! -z "$UUID" ]; then vmadm list | grep -w "$UUID"
       if [ $? == 0 ]; then break
         else echo "UUID not found. Check spelling and try again"; fi
@@ -1554,8 +1555,10 @@ function vmadm_create(){
 function info(){
 
   while true; do
-    read -p "Enter new VM UUID: " UUID
-    export UUID
+    if [ -z "$UUID" ]; then
+      read -p "Enter new VM UUID: " UUID
+      export UUID
+    fi
     vmadm list | grep -w "$UUID" 2>/dev/null >/dev/null
       if [ $? == 0 ]; then break
         else echo "UUID not found. Please check spelling and try again"; fi
