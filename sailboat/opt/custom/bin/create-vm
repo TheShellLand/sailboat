@@ -888,7 +888,7 @@ function kvm_vnc(){
   #     string (8 chars max)
 
   while true; do
-    read -p "VNC Password (8 chars max): " VNC_PASS
+    read -sp "VNC Password (8 chars max): " VNC_PASS
     if [ -z "$VNC_PASS" ]; then echo "Please enter a password"; else break; fi
   done
 
