@@ -106,6 +106,7 @@ vmadm update $UUID << EOF
   "update_nics": [
     {
       "interface": "$INTERFACE",
+      "mac": "$MAC",
       "nic_tag": "$NIC_TAG",
       "ip": "$IP_STATIC",
       "netmask": "$NETMASK",
