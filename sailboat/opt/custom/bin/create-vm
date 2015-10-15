@@ -615,13 +615,13 @@ function spec_kvm_disk(){
   echo ""
 
   echo "Select compression"
-  select COMPRESSION in "on (default)" "off" "lzjb" "gzip" "gzip-N" "zle"; do
+  select COMPRESSION in "on" "off (default)" "lzjb" "gzip" "gzip-N" "zle"; do
     case $COMPRESSION in
-      "on (default)") 
+      on)
         COMPRESSION=on
       
         break ;;
-      off) 
+      "off (default)")
         COMPRESSION=off
       
         break ;;
