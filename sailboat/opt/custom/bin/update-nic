@@ -77,7 +77,6 @@ vmadm update $UUID << EOF
 {
   "update_nics": [
     {
-      "interface": "$INTERFACE",
       "mac": "$MAC",
       "nic_tag": "$NIC_TAG",
       "model": "virtio",
@@ -105,7 +104,6 @@ vmadm update $UUID << EOF
 {
   "update_nics": [
     {
-      "interface": "$INTERFACE",
       "mac": "$MAC",
       "nic_tag": "$NIC_TAG",
       "ip": "$IP_STATIC",
@@ -128,7 +126,8 @@ function smartos_update_nic(){
     _setUUID
 
     # INTERFACE
-    _setINTERFACE
+    #_setINTERFACE
+    #"interface": "$INTERFACE",
 
     # MAC
     _setMAC
