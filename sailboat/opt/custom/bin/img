@@ -1,0 +1,4 @@
+
+echo "imgadm avail -o uuid,name,version,os,type,published"
+
+imgadm avail -o uuid,name,version,os,type,published
