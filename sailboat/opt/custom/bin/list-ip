@@ -1,0 +1,14 @@
+#!/bin/sh
+# SmartOS script for listing VMs
+#
+# Prints a list of VMs by IP including its nic address
+#
+#
+# alpha0.2
+# 0xB4AE7C4C Eric Jaw
+#
+
+
+echo "vmadm list -o uuid,hostname,nics.0.ip,nics.0.nic_tag,nics.1.ip,nics.1.nic_tag,state,type,alias -s nics.0.ip"
+echo ""
+vmadm list -o uuid,hostname,nics.0.ip,nics.0.nic_tag,nics.1.ip,nics.1.nic_tag,state,type,alias -s nics.0.ip
