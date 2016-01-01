@@ -621,6 +621,23 @@ if [[ "$(zpool list)" == "no pools available" ]] \
         POOL_FILE=/mockcn/${MOCKCN_SERVER_UUID}/pool.json
     fi
 
+    #
+    # The variable "arg_disklayout" hasn't been implemented yet
+    # So, let's implement it
+    # Then allow the user to pause the script after the pool is
+    # created so they can modify their zpool by ^Z
+    #
+    echo ""
+    echo "Enter your desired disk layout:"
+    select LAYOUT in "single" "mirror" "raidz2" "auto"; do
+        case $LAYOUT in
+            single) arg_disklayout=single ; break ;;
+            mirror) arg_disklayout=mirror ; break  ;;
+            raidz2) arg_disklayout=raidz2 ; break  ;;
+            auto) arg_disklayout='' ; break  ;;
+        esac
+    done
+
     if ! /usr/bin/disklayout "${arg_disklayout}" > ${POOL_FILE}; then
         fatal "disk layout failed"
     fi
