@@ -326,6 +326,12 @@ function create_zpool
         return;
     fi
 
+    #
+    # Pool creation occurs here
+    # Let's give the user the option to manually modify their
+    # pool after it has been created.
+    #
+
     if ! /usr/sbin/zpool list -H -o name $SYS_ZPOOL; then
         printf "%-56s" "creating pool: $SYS_ZPOOL" >&4
         if ! /usr/bin/mkzpool ${SYS_ZPOOL} ${POOL_JSON}; then
@@ -333,6 +339,18 @@ function create_zpool
             fatal "failed to create pool"
         fi
     fi
+
+    #
+    # Adding a pause
+    #
+    echo "This is now your chance to be all that you can be"
+    echo "The script has been paused, giving you the precious time"
+    echo "to change your vdevs to your heart's content."
+    echo ""
+    echo "Go ahead and press ^Z to hop out of this world"
+    echo "and come back to me once you're done."
+    echo ""
+    read -p "When you're back, press enter to continue "
 
     if ! zfs set atime=off ${SYS_ZPOOL}; then
         printf "%6s\n" "failed" >&4
