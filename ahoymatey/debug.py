@@ -1,8 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf8 -*-
 
-import re
+import re, chardet, json, string
 from pprint import pprint
+
+
+def strings(blob, min=4):
+    result = ""
+    for c in blob:
+        if c in string.printable:
+            result += c
+            continue
+        if len(result) >= min:
+            yield result
+        result = ""
 
 BLOCK = b'\xebH\x90ddd\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
         b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
@@ -54,15 +65,6 @@ BLOCK = b'\xebH\x90ddd\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x
         b'^]\xc3U\x89\xe5SWV\x8bE\x10\x88\xc5\x8aE\x18\xc0\xe0\x02f\xc1\xe8\x02\x88\xc1\x8au\x14\x8aU\x0cf\x8b] ' \
         b'\x8ae\x08\x8aE\x1cf\x89\xc7\xe8C\xff\xff\xff\x8e\xc3'
 
-DECODED = BLOCK.decode('latin-1')
-
-cleaned = re.findall('[A-Za-z]', DECODED)
-
-print('Original:', DECODED)
-print('Cleaned:', ''.join(cleaned))
-
-pprint(DECODED)
-
 OUT = 'ëH\x90ddd\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
       '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
       '\x00\x00\x00\x00\x00\x00\x00\x03\x02ÿ\x00\x00 ' \
@@ -103,3 +105,26 @@ OUT = 'ëH\x90ddd\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0
       'Àf\x83àþ\x0f"Àfê\x87#\x00\x00\x00\x00f1À\x8eØ\x8eÀ\x8eà\x8eè\x8eÐûfÃU\x89åVS\x8bE\x10f\x89Æf1ÀÁè\x04f\x89' \
       'Á\x8aU\x0cf\x8b]\x08è\x8aÿÿÿ\x89Ø\x8eÙÍ\x13\x88â1À\x8eØfè2ÿÿÿ\x88Ð[' \
       '^]ÃU\x89åSWV\x8bE\x10\x88Å\x8aE\x18Àà\x02fÁè\x02\x88Á\x8au\x14\x8aU\x0cf\x8b] \x8ae\x08\x8aE\x1cf\x89ÇèCÿÿÿ\x8eÃ'
+
+FDISK_OUT = '''
+    root@4d8b8e82-304c-4095-87d9-5912ea02c32a:~/sdc# fdisk -lu usb-release-20151224-20151224T195900Z-gf987f1d-4gb.img
+
+    Disk usb-release-20151224-20151224T195900Z-gf987f1d-4gb.img: 3.7 GiB, 4000000000 bytes, 7812500 sectors
+    Units: sectors of 1 * 512 = 512 bytes
+    Sector size (logical/physical): 512 bytes / 512 bytes
+    I/O size (minimum/optimal): 512 bytes / 512 bytes
+    Disklabel type: dos
+    Disk identifier: 0x00000000
+
+    Device                                                  Boot Start     End Sectors  Size Id Type
+    usb-release-20151224-20151224T195900Z-gf987f1d-4gb.img1 *       63 7807589 7807527  3.7G  c W95 FAT32 (LBA)
+            '''
+
+DECODE_CHECK = chardet.detect(BLOCK)
+
+DECODED = BLOCK.decode(DECODE_CHECK['encoding'])
+
+for i in strings(DECODED, 10):
+    print('>>> DECODED:', i)
+
+print('>>> FDISK:', FDISK_OUT)
