@@ -624,7 +624,7 @@ is_headnode()
     fi
 }
 
-if [[ "$(zpool list)" == "no pools available" ]] \
+if [[ ! "$(zpool list)" == "no pools available" ]] \
     || [[ -n ${MOCKCN} && ! -f ${SETUP_FILE} ]]; then
 
     if ! is_headnode; then
