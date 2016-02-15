@@ -8,7 +8,10 @@
 # 0xB4AE7C4C Eric Jaw
 #
 
+default=state
+if [ -z "$1" ]; then SORT=$default; else SORT=$1; fi
 
-echo "vmadm list -o uuid,hostname,nics.0.ip,nics.0.nic_tag,nics.1.ip,nics.1.nic_tag,state,type,alias -s state"
+
+echo "vmadm list -o uuid,hostname,nics.0.ip,nics.0.nic_tag,nics.1.ip,nics.1.nic_tag,state,type,alias -s $SORT"
 echo ""
-vmadm list -o uuid,hostname,nics.0.ip,nics.0.nic_tag,nics.1.ip,nics.1.nic_tag,state,type,alias -s state
+vmadm list -o uuid,hostname,nics.0.ip,nics.0.nic_tag,nics.1.ip,nics.1.nic_tag,state,type,alias -s $SORT
