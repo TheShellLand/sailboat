@@ -1,0 +1,186 @@
+#!/bin/bash
+# SmartOS script for updating zone nic gateway
+#
+# Program for setting primary gateway
+#
+#
+# alpha0.1
+# 0xB4AE7C4C
+#
+
+function _setUUID(){
+
+    # SET UUID
+    echo "[*] List of VMs"
+
+    if [ -f /opt/custom/bin/list-ip ]; then
+        /opt/custom/bin/list-ip
+    else
+        vmadm list -o uuid,nics.0.ip,nics.0.nic_tag,nics.1.ip,nics.1.nic_tag,state,type,alias,hostname -s nics.0.ip
+    fi
+
+    read -p "Enter UUID> " UUID
+    export UUID
+
+}
+
+function _setMAC(){
+
+    # SET MAC
+    echo "[*] Current nics"
+    vmadm get $UUID 2>/dev/null | json nics
+    vmadm info $UUID 2>/dev/null | json nics
+    MAC=
+    MAC1=
+    MAC=$(vmadm get $UUID 2>/dev/null | json nics | json -a mac)
+    MAC1=$(vmadm info $UUID 2>/dev/null | json nics | json -a mac)
+    echo ""
+    if [ ! -z "$MAC" ]; then MAC=$MAC; fi
+    if [ ! -z "$MAC1" ]; then MAC=$MAC1; fi
+    read -p "Enter mac> ($MAC) " NEWMAC
+    if [ ! -z "$NEWMAC" ]; then export MAC=$NEWMAC; fi
+
+
+    ### Advanced nic configurations ###
+
+  #  global: dhcp_server
+  #    With this property set to true, this VM will be able to operate as a
+  #    DHCP server on this interface.  Without this, some of the packets
+  #    required of a DHCP server will not get through.
+  #
+  #  global: allow_dhcp_spoofing
+  #    With this property set to true, this VM will be able to operate as a
+  #    DHCP server on this interface.  Without this, some of the packets
+  #    required of a DHCP server will not get through.
+
+    echo "Allow DHCP Spoofing?"
+    select ANSWER in "Yes" "No (default)"; do
+      case $ANSWER in
+        Yes)
+          DHCP=true
+          DHCP_SPOOF=true
+
+          break ;;
+        "No (default)")
+          DHCP=false
+          DHCP_SPOOF=false
+
+          break ;;
+      esac
+    done
+    echo ""
+
+  #
+  #  global: allow_ip_spoofing
+  #    With this property set to true, this VM will be able to send and
+  #    receive packets over this nic that don't match the IP address
+  #    specified by the ip property.
+
+    echo "Allow IP Spoofing?"
+    select ANSWER in "Yes" "No (default)"; do
+      case $ANSWER in
+        Yes)
+          IP_SPOOF=true
+
+          break ;;
+        "No (default)")
+          IP_SPOOF=false
+
+          break ;;
+      esac
+    done
+    echo ""
+
+  #  global: allow_mac_spoofing
+  #     With this property set to true, this VM will be able to send packets
+  #     from this nic with MAC addresses that don't match the mac property.
+
+    echo "Allow MAC Spoofing?"
+    select ANSWER in "Yes" "No (default)"; do
+      case $ANSWER in
+        Yes)
+          MAC_SPOOF=true
+
+          break ;;
+        "No (default)")
+          MAC_SPOOF=false
+
+          break ;;
+      esac
+    done
+    echo ""
+
+  #  global: allow_restricted_traffic
+  #     With this property set to true, this VM will be able to send
+  #     restricted network traffic (packets that are not IPv4, IPv6, or ARP)
+  #     from this nic.
+  #
+  #  KVM: allow_unfiltered_promisc
+  #    With this property set to true, this VM will be able to have multiple
+  #    MAC addresses (eg. running SmartOS with VNICs).  Without this option
+  #    these packets will not be picked up as only those unicast packets
+  #    destined for the VNIC's MAC will get through.  Warning: do not enable
+  #    this option unless you fully understand the security implications.
+  #
+  #  global: blocked_outgoing_ports
+  #    Array of ports on which this nic is prevented from sending traffic.
+  #
+  #  global: allowed_ips
+  #    This sets additional IP addresses from which this nic is allowed to
+  #    send traffic, in addition to the IPs in the ip and vrrp_primary_ip
+  #    properties (if set). Values can be either single IPv4 Addresses or
+  #    CIDR ranges in the form 192.168.1.0/24.
+
+    ### END Advanced nic configurations ###
+
+}
+
+function _UPDATEconfig(){
+
+    vmadm update $UUID << EOF
+{
+  "update_nics": [
+    {
+      "mac": "$MAC",
+      "dhcp_server": $DHCP,
+      "allow_dhcp_spoofing": $DHCP_SPOOF,
+      "allow_ip_spoofing": $IP_SPOOF,
+      "allow_mac_spoofing": $MAC_SPOOF
+    }
+  ]
+}
+EOF
+
+}
+
+
+function smartos_update_nic(){
+
+    export TYPE=$1
+
+    # UUID
+    _setUUID
+
+    # INTERFACE
+    #_setINTERFACE
+    #"interface": "$INTERFACE",
+
+    # MAC
+    _setMAC
+
+    _UPDATEconfig
+
+    # UPDATE VM
+    echo "[*] New nic"
+    vmadm get $UUID 2>/dev/null | json nics
+    vmadm info $UUID 2>/dev/null | json nics
+
+exit 0
+
+}
+
+
+
+# MAIN
+
+smartos_update_nic
