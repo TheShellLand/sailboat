@@ -1,0 +1,23 @@
+#!/bin/bash
+
+echo ""
+echo "  STATS"
+echo "============================"
+ipfstat -v
+echo ""
+
+echo "  OUTBOUND"
+echo "============================"
+ipfstat -vo
+echo ""
+
+echo "  INBOUND"
+echo "============================"
+ipfstat -vi
+echo ""
+
+
+echo "  NAT"
+echo "============================"
+ipnat -lh
+echo ""
