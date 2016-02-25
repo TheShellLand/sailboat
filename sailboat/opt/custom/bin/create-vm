@@ -800,9 +800,9 @@ function spec_kvm_iso_copy(){
 
   # Optional: Attaching virtio driver iso
 
-  ISOS=/opt/iso
+  ISOS=/opt/custom/iso
   ISO=($(ls "$ISOS" | grep .iso))
-  VIRTIOS=/opt/iso/virtio
+  VIRTIOS=$ISOS/virtio
   VIRTIO=($(ls "$VIRTIOS" | grep .iso))
 
   if [ ! -d "$ISOS" ]; then mkdir -p "$ISOS"; fi
