@@ -335,6 +335,9 @@ function spec_delegate_dataset(){
   #     many other options can be performed on this dataset from within the
   #     VM.
 
+
+  default=false
+
   echo ""
   select DELEGATE in "True" "False (default)"; do
     case $DELEGATE in
