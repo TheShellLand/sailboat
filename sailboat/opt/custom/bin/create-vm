@@ -338,7 +338,7 @@ function spec_delegate_dataset(){
 
   default=false
 
-  echo ""
+  echo "Delegate dataset?"
   select DELEGATE in "True" "False (default)"; do
     case $DELEGATE in
       True)
