@@ -1,0 +1,8 @@
+#!/bin/bash
+
+#
+# Change root password in Global Zone
+#
+
+umount /etc/shadow; cp /usbkey/shadow /etc/shadow; passwd root; cp /etc/shadow /usbkey/shadow
+
