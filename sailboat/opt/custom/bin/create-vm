@@ -12,15 +12,6 @@
 #
 
 
-function _EasyTiger(){
-
-  export DIFFICULTY=$1
-  echo ""
-
-  choose_vm_type
-  return $?
-
-}
 
 function pre_check(){
 
@@ -330,6 +321,45 @@ EOF
 
 }
 
+
+function spec_delegate_dataset(){
+
+  #  os: delegate_dataset
+  #     This property indicates whether we should delegate a ZFS dataset to an
+  #     OS VM. If true, the VM will get a dataset <zoneroot dataset>/data (by
+  #     default: zones/<uuid>/data) added to it. This dataset will be also be
+  #     mounted on /<zoneroot dataset>/data inside the zone (again by default:
+  #     /zones/<uuid>/data) but you can change this by setting the mountpoint
+  #     option on the dataset from within the zone with zfs(1M). When using
+  #     this option, sub-datasets can be created, snapshots can be taken and
+  #     many other options can be performed on this dataset from within the
+  #     VM.
+
+
+  default=false
+
+  echo "Delegate dataset?"
+  select DELEGATE in "True" "False (default)"; do
+    case $DELEGATE in
+      True)
+        DELEGATE=true
+
+        break ;;
+      "False (default)")
+        DELEGATE=false
+
+        break ;;
+    esac
+  done
+  echo ""
+
+  cat >> $TEMP << EOF
+  "delegate_dataset": "$DELEGATE",
+EOF
+  return $?
+
+}
+
 function spec_oslx_disk(){
 
   #  global: quota
@@ -340,7 +370,6 @@ function spec_oslx_disk(){
   #
   #    Set quota to 0 to disable (ie. for no quota).
 
-  # Need to add: spec_delegate_dataset
 
   default=5
 
@@ -800,9 +829,9 @@ function spec_kvm_iso_copy(){
 
   # Optional: Attaching virtio driver iso
 
-  ISOS=/opt/iso
+  ISOS=/opt/custom/iso
   ISO=($(ls "$ISOS" | grep .iso))
-  VIRTIOS=/opt/iso/virtio
+  VIRTIOS=$ISOS/virtio
   VIRTIO=($(ls "$VIRTIOS" | grep .iso))
 
   if [ ! -d "$ISOS" ]; then mkdir -p "$ISOS"; fi
@@ -1484,6 +1513,7 @@ function os(){
   spec_autoboot
   spec_oslx_ram
   spec_oslx_cpu
+  spec_delegate_dataset
   spec_oslx_disk
   spec_oslx_image
   spec_nics
@@ -1504,6 +1534,7 @@ function lx(){
   spec_lx_kernel
   spec_oslx_ram
   spec_oslx_cpu
+  spec_delegate_dataset
   spec_oslx_disk
   spec_oslx_image
   spec_nics
@@ -1691,21 +1722,3 @@ pre_check
 
 choose_vm_type
 
-#echo "How would you like to create your VM today?"
-#select ANSWER in "Just the simple essentials!" "I want to see all the options! (Under development)"; do
-#    case $ANSWER in
-#        "Just the simple essentials!")
-#          _EasyTiger EASY
-#        # Choose VM type
-#        # Choose DHCP or Static, nic tag
-#        #
-#          return $? ;;
-#        "I want to see all the options! (Under development)")
-#          _EasyTiger HARD
-#        # Choose VM type
-#        # Choose DHCP or Static, phys, nic tag, interface, etherstub, vnic
-#        #  - all ipadm ifprop, addrprop, and prop
-#        #
-#          return $? ;;
-#    esac
-#done

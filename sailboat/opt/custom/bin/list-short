@@ -9,7 +9,6 @@
 #
 
 
-echo "vmadm list -o uuid,nics.0.ip,nics.0.nic_tag,state,type,alias -s nics.0.nic_tag"
+echo "vmadm list -o uuid,alias,nics.0.nic_tag,nics.1.nic_tag -s nics.0.ip"
 echo ""
-vmadm list -o uuid,nics.0.ip,nics.0.nic_tag,state,type,alias -s nics.0.nic_tag
-
+vmadm list -o uuid,alias,nics.0.nic_tag,nics.1.nic_tag -s nics.0.ip

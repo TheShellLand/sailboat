@@ -48,7 +48,7 @@ function _UPDATEconfig(){
 {
   "update_nics": [
     {
-      "mac": "$MAC",
+      "mac": "$MAC",    
       "primary": true
     }
   ]
@@ -88,3 +88,4 @@ exit 0
 # MAIN
 
 smartos_update_nic
+

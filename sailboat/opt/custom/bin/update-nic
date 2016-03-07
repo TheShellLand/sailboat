@@ -12,7 +12,13 @@ function _setUUID(){
 
     # SET UUID
     echo "[*] List of VMs"
-    vmadm list -o uuid,hostname,nics.0.ip,nics.0.nic_tag,nics.1.ip,nics.1.nic_tag,state,type,alias -s state
+
+    if [ -f /opt/custom/bin/list-ip ]; then
+        /opt/custom/bin/list-ip 
+    else
+        vmadm list -o uuid,nics.0.ip,nics.0.nic_tag,nics.1.ip,nics.1.nic_tag,state,type,alias,hostname -s nics.0.ip
+    fi 
+
     read -p "Enter UUID> " UUID
     export UUID
 

@@ -14,7 +14,12 @@ ICAgICAtLS0gRHVrZSBMZWUKIAlBZGQgbmljcwoK' | openssl enc -base64 -d
 
 
 function info(){
-  vmadm list -o uuid,hostname,nics.0.ip,nics.0.nic_tag,nics.1.ip,nics.1.nic_tag,state,type,alias -s nics.0.ip
+  
+  if [ -f /opt/custom/bin/list-ip ]; then
+    /opt/custom/bin/list-ip
+  else
+    vmadm list -o uuid,hostname,nics.0.ip,nics.0.nic_tag,nics.1.ip,nics.1.nic_tag,state,type,alias -s nics.0.ip
+  fi
 
   while true; do
     read -p "Enter VM UUID: " UUID
