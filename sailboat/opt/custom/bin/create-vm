@@ -1272,7 +1272,7 @@ function spec_nics(){
       esac
     done
 
-    new_vm_filename "$IPADDRESS""$NICTAG"
+    new_vm_filename "$NICTAG"
 
     if [ "$FINISHED" == true ]; then break; fi
   done
