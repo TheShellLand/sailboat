@@ -1484,8 +1484,7 @@ function spec_ssh(){
 
   cat >> $TEMP << EOF
   "customer_metadata": {
-    "root_authorized_keys": "$ROOT_AUTHORIZED_KEYS",
-    "user-script" : "/usr/sbin/mdata-get root_authorized_keys > ~root/.ssh/authorized_keys; chmod 600 ~root/.ssh/authorized_keys"
+    "root_authorized_keys": "$ROOT_AUTHORIZED_KEYS"
   },
 EOF
   return $?
@@ -1721,4 +1720,3 @@ happy_term
 pre_check
 
 choose_vm_type
-
