@@ -9,7 +9,6 @@ function info(){
     vmadm list | grep -w "$UUID" 2>/dev/null >/dev/null
       if [ $? == 0 ]; then
         BRAND=$(vmadm get "$UUID" | json -a brand)
-        break
           else echo "UUID not found. Please check spelling and try again"; fi
 
   else
