@@ -1,20 +1,31 @@
 #!/usr/bin/env bash
 
 
-
-
 function info(){
-  vmadm list -o uuid,hostname,type,nics.0.nic_tag,nics.1.nic_tag,ram,state,alias -s state
 
-  while true; do
-    read -p "Enter VM UUID: " UUID
+  if [ ! -z "$1" ]; then
+    UUID=$1
     export UUID
     vmadm list | grep -w "$UUID" 2>/dev/null >/dev/null
       if [ $? == 0 ]; then
         BRAND=$(vmadm get "$UUID" | json -a brand)
         break
           else echo "UUID not found. Please check spelling and try again"; fi
-  done
+
+  else
+
+    vmadm list -o uuid,hostname,type,nics.0.nic_tag,nics.1.nic_tag,ram,state,alias -s state
+
+    while true; do
+      read -p "Enter VM UUID: " UUID
+      export UUID
+      vmadm list | grep -w "$UUID" 2>/dev/null >/dev/null
+        if [ $? == 0 ]; then
+          BRAND=$(vmadm get "$UUID" | json -a brand)
+          break
+            else echo "UUID not found. Please check spelling and try again"; fi
+    done
+  fi
 
   while true; do
     vmadm start "$UUID"
@@ -70,4 +81,9 @@ lpPilpMK4paT4paT4paT4paT4oCU4oCU4oCULeKWk+KWk+KWk+KWkwoK' | openssl enc -base64 
 # main
 
 pretty_term
-info
+
+if [ ! -z "$1" ]; then
+  info $1
+else
+  info
+fi
