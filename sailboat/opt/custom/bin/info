@@ -12,9 +12,9 @@ function info(){
           else echo "UUID not found. Please check spelling and try again"; fi
 
   else
-
+  
     vmadm list -o uuid,hostname,type,nics.0.nic_tag,nics.1.nic_tag,ram,state,alias -s state
-
+  
     while true; do
       read -p "Enter VM UUID: " UUID
       export UUID
