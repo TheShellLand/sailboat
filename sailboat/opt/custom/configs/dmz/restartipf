@@ -1,3 +1,0 @@
-#!/bin/bash
-
-svcadm disable /network/ipfilter:default; svcadm enable /network/ipfilter:default
