@@ -441,7 +441,7 @@ function spec_oslx_image(){
       read -p "Select existing image: " IMAGE_UUID
       if [ -z "$IMAGE_UUID" ]; then echo "Missing UUID"
         else imgadm list | grep -w "$IMAGE_UUID" 2>/dev/null >/dev/null
-          if [ $? == 0 ]; then break
+          if [ $? == 0 ]; then export IMAGE_UUID; break
             else echo "Image UUID does not exist. Check your spelling and try again"; sleep 2; fi
       fi
   done
@@ -459,17 +459,17 @@ function spec_lx_kernel(){
   #  lx: kernel_version
   #    This sets the version of Linux to emulate for LX VMs
 
-  default="3.13.0"
+  default="$(imgadm info $IMAGE_UUID | json manifest | json tags | json kernel_version)"
 
   echo "Select kernel version (setting an unsupported kernel version may cause instabilities in the VM)"
-  select KERNEL_VERSION in "3.13.0" "Custom"; do
+  select KERNEL_VERSION in "$default (default from image)" "Custom"; do
     case $KERNEL_VERSION in
-      "3.13.0") 
-        KERNEL_VERSION="3.13.0"
+      "$default (default from image)") 
+        KERNEL_VERSION=$default
         
         break ;;
       Custom) 
-        read -p "Custom kernel version (3.13.0): " KERNEL_VERSION
+        read -p "Custom kernel version ($default): " KERNEL_VERSION
         if [ -z "$KERNEL_VERSION" ]; then KERNEL_VERSION="$default"; fi
         break ;;
     esac
@@ -1530,12 +1530,12 @@ function lx(){
   spec_alias
   spec_hostname
   spec_autoboot
-  spec_lx_kernel
   spec_oslx_ram
   spec_oslx_cpu
   spec_delegate_dataset
   spec_oslx_disk
   spec_oslx_image
+  spec_lx_kernel
   spec_nics
   spec_ssh
   spec_dns
@@ -1720,3 +1720,4 @@ happy_term
 pre_check
 
 choose_vm_type
+
