@@ -1,0 +1,13 @@
+#!/bin/sh
+# SmartOS script for listing VMs
+#
+# Prints a list of VMs and some technical info
+#
+#
+# alpha0.2
+# 0xB4AE7C4C Eric Jaw
+#
+
+echo "vmadm list -o uuid,cpu_cap,max_physical_memory,vcpus,ram,type,nics.0.nic_tag,state,alias,hostname -s alias"
+echo ""
+vmadm list -o uuid,cpu_cap,max_physical_memory,vcpus,ram,type,nics.0.nic_tag,state,alias,hostname -s alias
