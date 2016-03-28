@@ -8,6 +8,6 @@
 # 0xB4AE7C4C Eric Jaw
 #
 
-echo "vmadm list -o uuid,cpu_cap,max_physical_memory,vcpus,ram,type,nics.0.nic_tag,state,alias,hostname -s alias"
+echo "vmadm list -o uuid,cpu_cap,max_physical_memory,vcpus,ram,max_swap,type,state,nics.0.nic_tag,alias,hostname -s nics.0.nic_tag"
 echo ""
-vmadm list -o uuid,cpu_cap,max_physical_memory,vcpus,ram,type,nics.0.nic_tag,state,alias,hostname -s alias
+vmadm list -o uuid,cpu_cap,max_physical_memory,vcpus,ram,max_swap,type,state,nics.0.nic_tag,alias,hostname -s nics.0.nic_tag
