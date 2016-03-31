@@ -601,7 +601,7 @@ function spec_kvm_disk(){
       KVM_DISK_TYPE="$default"
       
       break ;;
-    "Image: Disk from an image") 
+    "Image: Disk from an image")
       KVM_DISK_TYPE=image
       
       break ;;
