@@ -386,14 +386,14 @@ function spec_delegate_dataset(){
   default=false
 
   echo "Delegate dataset?"
-  select DELEGATE in "True" "False (default)"; do
+  select DELEGATE in "False (default)" "True"; do
     case $DELEGATE in
-      True)
-        DELEGATE=true
-
-        break ;;
       "False (default)")
         DELEGATE=false
+
+        break ;;
+      True)
+        DELEGATE=true
 
         break ;;
     esac
@@ -691,14 +691,14 @@ function spec_kvm_disk(){
   echo ""
 
   echo "Select compression"
-  select COMPRESSION in "on" "off (default)" "lzjb" "gzip" "gzip-N" "zle"; do
+  select COMPRESSION in "off (default)" "on" "lzjb" "gzip" "gzip-N" "zle"; do
     case $COMPRESSION in
-      on)
-        COMPRESSION=on
-      
-        break ;;
       "off (default)")
         COMPRESSION=off
+
+        break ;;
+      on)
+        COMPRESSION=on
       
         break ;;
       lzjb) 
