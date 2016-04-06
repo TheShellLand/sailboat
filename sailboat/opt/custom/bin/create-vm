@@ -769,7 +769,6 @@ function spec_kvm_disk(){
           else echo "Image UUID does not exist. Check your spelling and try again"; sleep 2; fi
     fi
   done
-  echo ""
 
   while true; do
     echo ""
@@ -1212,14 +1211,14 @@ function spec_nics(){
     echo "Allow DHCP Spoofing?"
     select ANSWER in "Yes" "No (default)"; do
       case $ANSWER in
-        Yes)
-          DHCP=true
-          DHCP_SPOOF=true
-
-          break ;;
         "No (default)")
           DHCP=false
           DHCP_SPOOF=false
+
+          break ;;
+        Yes)
+          DHCP=true
+          DHCP_SPOOF=true
 
           break ;;
       esac
@@ -1235,12 +1234,12 @@ function spec_nics(){
     echo "Allow IP Spoofing?"
     select ANSWER in "Yes" "No (default)"; do
       case $ANSWER in
-        Yes)
-          IP_SPOOF=true
-
-          break ;;
         "No (default)")
           IP_SPOOF=false
+
+          break ;;
+        Yes)
+          IP_SPOOF=true
 
           break ;;
       esac
@@ -1254,12 +1253,12 @@ function spec_nics(){
     echo "Allow MAC Spoofing?"
     select ANSWER in "Yes" "No (default)"; do
       case $ANSWER in
-        Yes)
-          MAC_SPOOF=true
-
-          break ;;
         "No (default)")
           MAC_SPOOF=false
+
+          break ;;
+        Yes)
+          MAC_SPOOF=true
 
           break ;;
       esac
@@ -1428,18 +1427,18 @@ EOF
   echo "Add another NIC?"
   select ANSWER in "Yes" "No (default)"; do
     case $ANSWER in
+      "No (default)")
+        cat >> $TEMP << EOF
+    }
+  ],
+EOF
+        break ;;
       "Yes")
         cat >> $TEMP << EOF
     },
 EOF
         echo ""
         spec_nics 1
-        break ;;
-      "No (default)")
-        cat >> $TEMP << EOF
-    }
-  ],
-EOF
         break ;;
     esac
   done
