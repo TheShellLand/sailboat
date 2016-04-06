@@ -267,9 +267,56 @@ function spec_oslx_ram(){
     esac
   done
   echo ""
+
+  export RAM_MAX
   
   cat >> $TEMP << EOF
   "max_physical_memory": $RAM_MAX,
+EOF
+  return $?
+
+}
+
+function spec_swap(){
+
+  #  global: max_swap
+  #     The maximum amount of virtual memory the VM is allowed to use.  This
+  #     cannot be lower than max_physical_memory, nor can it be lower than 256.
+  
+  default=default
+
+  echo ""
+  echo "Select max swap size (in MB)"
+  select SWAP_MAX in "default (equal to RAM)" "4096" "8192" "16384" "Custom"; do
+    case $SWAP_MAX in
+      "default (equal to RAM)")
+        SWAP_MAX=$default
+
+        break ;;
+      4096)
+        SWAP_MAX=4096
+
+        break ;;
+      8192)
+        SWAP_MAX=8192
+
+        break ;;
+      16384)
+        SWAP_MAX=16384
+
+        break ;;
+      Custom)
+        read -p "Custom max swap usage: " SWAP_MAX
+        if [ -z "$SWAP_MAX" ]; then SWAP_MAX="$default"; fi
+        break ;;
+    esac
+  done
+  echo ""
+  
+  if [ "$SWAP_MAX" == "default" ]; then return 0; fi
+
+  cat >> $TEMP << EOF
+  "max_swap": $SWAP_MAX,
 EOF
   return $?
 
@@ -1511,6 +1558,7 @@ function os(){
   spec_hostname
   spec_autoboot
   spec_oslx_ram
+  spec_swap
   spec_oslx_cpu
   spec_delegate_dataset
   spec_oslx_disk
@@ -1531,6 +1579,7 @@ function lx(){
   spec_hostname
   spec_autoboot
   spec_oslx_ram
+  spec_swap
   spec_oslx_cpu
   spec_delegate_dataset
   spec_oslx_disk
@@ -1552,6 +1601,7 @@ function kvm(){
   spec_hostname
   spec_autoboot
   spec_kvm_ram
+  spec_swap
   spec_kvm_cpu
   spec_kvm_disk
   spec_nics
