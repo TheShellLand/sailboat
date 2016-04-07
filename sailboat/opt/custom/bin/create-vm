@@ -846,20 +846,20 @@ EOF
   fi
 
   echo "Add another Disk?"
-  select ANSWER in "Yes" "No (default)"; do
+  select ANSWER in "No (default)" "Yes"; do
     case $ANSWER in
+      "No (default)")
+        cat >> $TEMP << EOF
+    }
+  ],
+EOF
+        break ;;
       "Yes")
         cat >> $TEMP << EOF
     },
 EOF
         echo ""
         spec_kvm_disk 1
-        break ;;
-      "No (default)")
-        cat >> $TEMP << EOF
-    }
-  ],
-EOF
         break ;;
     esac
   done
@@ -1209,7 +1209,7 @@ function spec_nics(){
   #    required of a DHCP server will not get through.
 
     echo "Allow DHCP Spoofing?"
-    select ANSWER in "Yes" "No (default)"; do
+    select ANSWER in "No (default)" "Yes"; do
       case $ANSWER in
         "No (default)")
           DHCP=false
@@ -1232,7 +1232,7 @@ function spec_nics(){
   #    specified by the ip property.
 
     echo "Allow IP Spoofing?"
-    select ANSWER in "Yes" "No (default)"; do
+    select ANSWER in "No (default)" "Yes"; do
       case $ANSWER in
         "No (default)")
           IP_SPOOF=false
@@ -1251,7 +1251,7 @@ function spec_nics(){
   #     from this nic with MAC addresses that don't match the mac property.
 
     echo "Allow MAC Spoofing?"
-    select ANSWER in "Yes" "No (default)"; do
+    select ANSWER in "No (default)" "Yes"; do
       case $ANSWER in
         "No (default)")
           MAC_SPOOF=false
@@ -1425,7 +1425,7 @@ EOF
   fi; fi
 
   echo "Add another NIC?"
-  select ANSWER in "Yes" "No (default)"; do
+  select ANSWER in "No (default)" "Yes"; do
     case $ANSWER in
       "No (default)")
         cat >> $TEMP << EOF
@@ -1640,8 +1640,8 @@ function info(){
       export UUID
     fi
     vmadm list | grep -w "$UUID" 2>/dev/null >/dev/null
-      if [ $? == 0 ]; then break
-        else echo "UUID not found. Please check spelling and try again"; fi
+    if [ $? == 0 ]; then break
+      else echo "UUID not found. Please check spelling and try again"; UUID=; echo ""; fi
   done
 
   while true; do
