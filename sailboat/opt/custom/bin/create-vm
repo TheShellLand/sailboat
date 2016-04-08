@@ -883,10 +883,10 @@ function spec_kvm_iso_copy(){
   if [ ! -d "$ISOS" ]; then mkdir -p "$ISOS"; fi
   if [ ! -d "$VIRTIOS" ]; then mkdir -p "$VIRTIOS"; fi
 
-  ls -l "$ISOS" | grep ^[-] 2>/dev/null >/dev/null
+  ls -l "$ISOS" | grep ^[-l] 2>/dev/null >/dev/null
   if [ $? == 1 ]; then echo "[!] No ISO found in $ISOS"; echo ""; return $?; fi
 
-  ls -l "$VIRTIOS" | grep ^[-] 2>/dev/null >/dev/null
+  ls -l "$VIRTIOS" | grep ^[-l] 2>/dev/null >/dev/null
   if [ $? == 1 ]; then echo "[!] No virtio drivers found in $VIRTIOS"; echo ""; fi
 
   while true; do
