@@ -15,6 +15,7 @@ function startvm(){
     vmadm list -s state
     while true; do
     read -p "Enter VM UUID: " UUID
+    export UUID
     vmadm list | grep -w "$UUID" 2>/dev/null >/dev/null
       if [ $? == 0 ]; then
         BRAND=$(vmadm get "$UUID" | json -a brand)
@@ -46,6 +47,7 @@ function startvm(){
                                     echo "Select virtio"
                                     select VIRTIO in ${array[@]}; do
                                         echo ""
+                                        [[ ! `vmadm get "$UUID"| json state` == running ]]; vmadm stop -F "$UUID"
                                         echo "[*]" vmadm start "$UUID" order=cd,once=d cdrom=/"$ISO",ide cdrom=/"$VIRTIO",ide
                                         vmadm start "$UUID" order=cd,once=d cdrom=/"$ISO",ide cdrom=/"$VIRTIO",ide
                                         break
@@ -126,9 +128,6 @@ function iso_copy(){
 
   while true; do
     echo ""
-    #vmadm list
-    read -p "Set UUID of the new VM: " UUID
-    export UUID
     if [ ! -z "$UUID" ]; then vmadm list | grep -w "$UUID"
       if [ $? == 0 ]; then break
         else echo "UUID not found. Check spelling and try again"; fi
@@ -142,7 +141,7 @@ function iso_copy(){
     echo ""
     echo Copying "$ISO" "==>" /zones/"$UUID"/root/
     echo ""
-    rsync -ih --progress $ISOS/"$ISO" /zones/"$UUID"/root/
+    rsync -ih --copy-links --progress $ISOS/"$ISO" /zones/"$UUID"/root/
     break
   done
   echo ""
@@ -163,7 +162,7 @@ function iso_copy(){
                 echo ""
                 echo Copying "$VIRTIO" "==>" /zones/"$UUID"/root/
                 echo ""
-                rsync -ih --progress $VIRTIOS/"$VIRTIO" /zones/"$UUID"/root/
+                rsync -ih --copy-links --progress $VIRTIOS/"$VIRTIO" /zones/"$UUID"/root/
                 echo "[*] vmadm start "$UUID" order=cd,once=d cdrom=/"$ISO",ide cdrom=/"$VIRTIO",ide"
                 vmadm start "$UUID" order=cd,once=d cdrom=/"$ISO",ide cdrom=/"$VIRTIO",ide
                 break

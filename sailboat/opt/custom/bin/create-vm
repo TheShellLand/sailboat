@@ -907,7 +907,7 @@ function spec_kvm_iso_copy(){
     echo ""
     echo Copying "$ISO" "==>" /zones/"$UUID"/root/
     echo ""
-    rsync -ih --progress $ISOS/"$ISO" /zones/"$UUID"/root/
+    rsync -ih --copy-links --progress $ISOS/"$ISO" /zones/"$UUID"/root/
     break
   done
   echo ""
@@ -928,7 +928,7 @@ function spec_kvm_iso_copy(){
                 echo ""
                 echo Copying "$VIRTIO" "==>" /zones/"$UUID"/root/
                 echo ""
-                rsync -ih --progress $VIRTIOS/"$VIRTIO" /zones/"$UUID"/root/
+                rsync -ih --copy-links --progress $VIRTIOS/"$VIRTIO" /zones/"$UUID"/root/
                 echo "[*] vmadm start "$UUID" order=cd,once=d cdrom=/"$ISO",ide cdrom=/"$VIRTIO",ide"
                 vmadm start "$UUID" order=cd,once=d cdrom=/"$ISO",ide cdrom=/"$VIRTIO",ide
                 break
@@ -1769,4 +1769,3 @@ happy_term
 pre_check
 
 choose_vm_type
-
