@@ -30,6 +30,8 @@ function startvm(){
             Yes)
                 echo ""
                 array=($(ls /zones/"$UUID"/root | grep .iso))
+                [[ -z "$array" ]]; iso_copy
+
                 while true; do
                     echo "Set ISO"
                     select ISO in ${array[@]}; do
@@ -100,6 +102,90 @@ function startvm(){
     return $?
 
 }
+
+function iso_copy(){
+
+  # Selects and copies an ISO to the KVM root for booting
+  # e.g. Windows
+
+  # Optional: Attaching virtio driver iso
+
+  ISOS=/opt/custom/iso
+  ISO=($(ls "$ISOS" | grep .iso))
+  VIRTIOS=$ISOS/virtio
+  VIRTIO=($(ls "$VIRTIOS" | grep .iso))
+
+  if [ ! -d "$ISOS" ]; then mkdir -p "$ISOS"; fi
+  if [ ! -d "$VIRTIOS" ]; then mkdir -p "$VIRTIOS"; fi
+
+  ls -l "$ISOS" | grep ^[-] 2>/dev/null >/dev/null
+  if [ $? == 1 ]; then echo "[!] No ISO found in $ISOS"; echo ""; return $?; fi
+
+  ls -l "$VIRTIOS" | grep ^[-] 2>/dev/null >/dev/null
+  if [ $? == 1 ]; then echo "[!] No virtio drivers found in $VIRTIOS"; echo ""; fi
+
+  while true; do
+    echo ""
+    #vmadm list
+    read -p "Set UUID of the new VM: " UUID
+    export UUID
+    if [ ! -z "$UUID" ]; then vmadm list | grep -w "$UUID"
+      if [ $? == 0 ]; then break
+        else echo "UUID not found. Check spelling and try again"; fi
+    fi
+  done
+  echo ""
+
+  echo "Select an ISO"
+  select ANSWER in "${ISO[@]}"; do
+    ISO="$ANSWER"
+    echo ""
+    echo Copying "$ISO" "==>" /zones/"$UUID"/root/
+    echo ""
+    rsync -ih --progress $ISOS/"$ISO" /zones/"$UUID"/root/
+    break
+  done
+  echo ""
+
+  echo "Boot?"
+  select ANSWER in "Yes" "No"; do
+    case $ANSWER in
+      Yes)
+        echo ""
+        echo "Attach virtio ISO?"
+        select ANSWER in "Yes" "No"; do
+          case $ANSWER in
+            Yes)
+              echo ""
+              echo "Select virtio iso"
+              select ANSWER in "${VIRTIO[@]}"; do
+                VIRTIO="$ANSWER"
+                echo ""
+                echo Copying "$VIRTIO" "==>" /zones/"$UUID"/root/
+                echo ""
+                rsync -ih --progress $VIRTIOS/"$VIRTIO" /zones/"$UUID"/root/
+                echo "[*] vmadm start "$UUID" order=cd,once=d cdrom=/"$ISO",ide cdrom=/"$VIRTIO",ide"
+                vmadm start "$UUID" order=cd,once=d cdrom=/"$ISO",ide cdrom=/"$VIRTIO",ide
+                break
+              done
+              break ;;
+
+            No) break ;;
+          esac
+        done
+
+        echo "[*] vmadm start "$UUID" order=cd,once=d cdrom=/"$ISO",ide"
+        vmadm start "$UUID" order=cd,once=d cdrom=/"$ISO",ide
+        break ;;
+      No) break ;;
+    esac
+  done
+  echo ""
+
+  return $?
+
+}
+
 
 function pretty_term(){
 clear
